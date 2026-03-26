@@ -2,22 +2,26 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>3.26 线路外呼效能诊断看板</title>
-    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <title>每日线路外呼效能诊断</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
-        body { background-color: #0b0f1a; color: #e2e8f0; font-family: "Helvetica Neue", sans-serif; margin: 0; padding: 25px; }
+        body { background-color: #0b0f1a; color: #e2e8f0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; margin: 0; padding: 25px; }
         .dashboard-header { text-align: left; border-left: 5px solid #38bdf8; padding-left: 20px; margin-bottom: 25px; }
-        .dashboard-header h1 { font-size: 24px; color: #f8fafc; margin: 0; }
+        .dashboard-header h1 { font-size: 24px; color: #f8fafc; margin: 0; letter-spacing: 1px; }
         .container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
-        .card { background: #161e2d; border-radius: 16px; padding: 20px; border: 1px solid #1e293b; min-height: 520px; }
-        #radar-chart { width: 620px; height: 520px; }
-        #scatter-chart { width: 600px; height: 520px; }
+        .card { background: #161e2d; border-radius: 16px; padding: 25px; border: 1px solid #1e293b; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        #radar-chart { width: 620px; height: 550px; }
+        #scatter-chart { width: 600px; height: 550px; }
+        .analysis-box { max-width: 1240px; margin: 25px auto; background: #1e293b; border-radius: 12px; padding: 20px; border: 1px dashed #334155; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th { padding: 10px; color: #94a3b8; border-bottom: 1px solid #334155; }
+        td { padding: 12px 15px; border-bottom: 1px solid #334155; }
     </style>
 </head>
 <body>
 
 <div class="dashboard-header">
-    <h1>3.26 线路外呼效能诊断看板</h1>
+    <h1 id="main-title">线路外呼效能诊断看板</h1>
     <p style="color: #94a3b8;">当前重点关注：324-18, 129-09, 351-06, 166-25, 351-03, 235-32, 149-30, 342-04</p>
 </div>
 
@@ -26,17 +30,114 @@
     <div class="card"><div id="scatter-chart"></div></div>
 </div>
 
-<script>
-    // ... 之前的图表数据逻辑保持不变 ...
-    // ... 记得更新 3.26 的最新数据 ...
+<div class="analysis-box">
+    <h3 style="color: #38bdf8; margin-top: 0;">🔍 核心网关指标分析</h3>
+    <table id="analysis-table">
+        <tr><th>网关编号</th><th>综合画像</th><th>业务建议</th></tr>
+        </table>
+</div>
+
+<script type="text/javascript">
+    const now = new Date();
+    const dateStr = (now.getMonth() + 1) + '.' + now.getDate();
+    document.getElementById('main-title').innerText = dateStr + ' 线路外呼效能诊断看板';
+
+    // 更新后的 8 条重点网关
+    const highlightList = ['324-18', '129-09', '351-06', '166-25', '351-03', '235-32', '149-30', '342-04'];
     
-    // 渲染代码逻辑
-    window.onload = function() {
-        const radarChart = echarts.init(document.getElementById('radar-chart'));
-        // ... setOption ...
-        const scatterChart = echarts.init(document.getElementById('scatter-chart'));
-        // ... setOption ...
-    }
+    // 1. 雷达图：解决重叠的终极布局
+    const radarChart = echarts.init(document.getElementById('radar-chart'));
+    radarChart.setOption({
+        color: ['#38bdf8', '#fbbf24', '#f472b6', '#34d399', '#a78bfa', '#f87171', '#818cf8', '#2dd4bf'],
+        title: { text: dateStr + ' 新线路外呼效果比较', left: 'center', textStyle: {color: '#f8fafc', fontSize: 18} },
+        legend: { 
+            bottom: '2%',      // 强制图例沉底
+            orient: 'horizontal',
+            itemGap: 12,
+            textStyle: {color: '#94a3b8', fontSize: 11}, 
+            icon: 'circle',
+            data: highlightList,
+            padding: [5, 10]
+        },
+        radar: {
+            center: ['50%', '45%'], // 中心点上移，给底部图例腾位置
+            radius: '55%',          // 缩小半径，防止重叠
+            indicator: [
+                { name: 'A率(意向)', max: 6 },
+                { name: 'AB率', max: 14 },
+                { name: '平均时长', max: 28 },
+                { name: '超60s占比', max: 13 }
+            ],
+            axisName: { 
+                color: '#ffffff', 
+                backgroundColor: '#334155', 
+                borderRadius: 4, 
+                padding: [4, 8],
+                fontSize: 12
+            },
+            nameGap: 40, // 指标文字离图表的间距加大
+            splitLine: { lineStyle: { color: '#334155' } },
+            axisLine: { lineStyle: { color: '#475569' } }
+        },
+        series: [{
+            type: 'radar',
+            data: [
+                {name: '324-18', value: [4.28, 9.94, 22.25, 8.25]},
+                {name: '129-09', value: [4.12, 11.61, 24.75, 10.96]},
+                {name: '351-06', value: [3.91, 10.53, 24.07, 10.98]},
+                {name: '166-25', value: [5.73, 10.79, 24.18, 9.69]},
+                {name: '351-03', value: [2.78, 9.44, 26.27, 12.50]},
+                {name: '235-32', value: [3.84, 7.92, 23.41, 8.45]},
+                {name: '149-30', value: [2.45, 7.98, 18.74, 6.13]},
+                {name: '342-04', value: [3.92, 8.82, 19.25, 4.90]}
+            ],
+            symbolSize: 4,
+            areaStyle: { opacity: 0.02 }
+        }]
+    });
+
+    // 2. 散点图
+    const scatterChart = echarts.init(document.getElementById('scatter-chart'));
+    const allData = [
+        [22.48, 3.21, '163-43'], [25.67, 5.31, '261-03'], [22.25, 4.28, '324-18'],
+        [23.41, 3.84, '235-32'], [23.96, 4.72, '189-48'], [23.80, 3.88, '138-31'],
+        [24.75, 4.12, '129-09'], [21.68, 3.37, '295-24'], [24.07, 3.91, '351-06'],
+        [24.18, 5.73, '166-25'], [26.27, 2.78, '351-03'], [18.74, 2.45, '149-30'],
+        [19.25, 3.92, '342-04'], [23.26, 3.62, '101-117'], [23.29, 2.93, '141-24']
+    ];
+
+    scatterChart.setOption({
+        title: { text: '全网关分布象限图', left: 'center', textStyle: {color: '#f8fafc', fontSize: 18} },
+        xAxis: { name: '时长(s)', axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#334155'}} },
+        yAxis: { name: 'A率(%)', axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#334155'}} },
+        series: [{
+            type: 'scatter',
+            data: allData,
+            symbolSize: (d) => highlightList.includes(d[2]) ? 20 : 10,
+            itemStyle: {
+                color: (p) => highlightList.includes(p.data[2]) ? '#38bdf8' : '#334155',
+                borderColor: '#fff',
+                borderWidth: (p) => highlightList.includes(p.data[2]) ? 2 : 0
+            },
+            label: { show: true, formatter: '{@[2]}', position: 'top', color: '#cbd5e1', fontSize: 10 },
+            markLine: {
+                lineStyle: { type: 'dotted', color: '#64748b' },
+                data: [ {xAxis: 23.5, label: {formatter: '平均时长'}} ]
+            }
+        }]
+    });
+
+    // 3. 动态业务分析
+    const advice = [
+        {id: '166-25', img: '<b>【今日顶尖】</b> A率 (5.73%) 全网第一，转化极其精准。', adv: '核心高意向线路'},
+        {id: '129-09 / 351-06', img: '<b>【主力稳健】</b> 高通话深度 (超60s占比11%) 配合平稳意向。', adv: '建议持续跑量'},
+        {id: '351-03', img: '<b>【严重损耗】</b> 时长最高 (26.2s) 却产出最低 A率。', adv: '⚠️ 建议检查话术匹配度'},
+        {id: '149-30 / 342-04', img: '<b>【浅层流失】</b> 时长不足 20s，用户接听意愿极低。', adv: '检查号码质量/标记'}
+    ];
+    const table = document.getElementById('analysis-table');
+    advice.forEach(item => {
+        table.innerHTML += `<tr><td style="color:#38bdf8; font-weight:bold;">${item.id}</td><td>${item.img}</td><td>${item.adv}</td></tr>`;
+    });
 </script>
 </body>
 </html>
