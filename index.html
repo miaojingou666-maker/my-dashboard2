@@ -27,7 +27,7 @@
 
 <div class="dashboard-header">
     <h1>网关效能深度诊断中心</h1>
-    <p>自3.24起历史数据与多维平行特征对比</p>
+    <p>基准线：261-03 | 自3.24起历史数据与多维对比</p>
 </div>
 
 <div class="control-panel">
@@ -51,7 +51,7 @@
 
 <div class="dashboard-header" style="margin-top: 25px;">
     <h1>历史趋势博弈矩阵</h1>
-    <p>关键指标随时间的动态演变</p>
+    <p>关键指标随时间的动态演变（261-03为加粗基准线）</p>
 </div>
 <div class="trend-grid-container">
     <div class="card"><div id="t-a"></div></div>
@@ -61,34 +61,46 @@
 </div>
 
 <script>
+    // 历史数据仓库，已集成 3.26 数据
     const HISTORY_DATA = {
         "3.24": {
             "129-09": [5.31, 10.79, 23.47, 8.84], "138-31": [4.26, 11.23, 22.95, 8.41],
             "149-30": [2.12, 7.91, 19.34, 5.83], "166-25": [5.71, 11.23, 24.11, 9.71],
             "235-32": [3.81, 7.91, 23.41, 8.41], "295-24": [3.31, 8.32, 21.61, 7.39],
             "324-18": [3.31, 8.32, 21.61, 7.39], "342-04": [4.11, 8.83, 19.82, 5.21],
-            "351-03": [2.77, 9.31, 26.21, 12.31], "351-06": [3.77, 10.21, 24.11, 10.53]
+            "351-03": [2.77, 9.31, 26.21, 12.31], "351-06": [3.77, 10.21, 24.11, 10.53],
+            "261-03": [5.31, 12.68, 25.67, 10.75]
         },
         "3.25": {
             "129-09": [5.87, 13.05, 24.58, 10.84], "138-31": [4.29, 13.50, 24.62, 9.82],
             "149-30": [2.45, 7.98, 18.74, 6.13], "166-25": [5.73, 10.79, 24.18, 9.69],
             "235-32": [3.84, 7.92, 23.41, 8.45], "295-24": [3.34, 8.37, 21.74, 7.42],
             "324-18": [3.32, 9.51, 22.81, 9.17], "342-04": [3.92, 8.82, 19.25, 4.90],
-            "351-03": [3.67, 8.56, 21.32, 6.36], "351-06": [2.81, 9.06, 25.63, 11.56]
+            "351-03": [3.67, 8.56, 21.32, 6.36], "351-06": [2.81, 9.06, 25.63, 11.56],
+            "261-03": [5.30, 11.85, 25.82, 10.94]
+        },
+        "3.26": { // 数据来自 image_235fbc.jpg
+            "351-06": [5.18, 11.42, 24.55, 10.50], "261-03": [6.63, 14.06, 28.43, 13.16],
+            "189-48": [3.63, 10.66, 23.37, 9.31], "166-25": [5.17, 13.88, 27.07, 12.09],
+            "357-05": [4.88, 11.55, 23.97, 10.31], "129-09": [5.23, 13.24, 25.82, 10.95],
+            "138-31": [6.36, 14.00, 26.79, 12.41], "324-18": [3.29, 9.76, 20.53, 7.15],
+            "235-32": [4.36, 11.58, 25.83, 12.18], "295-24": [5.01, 10.95, 23.47, 9.55],
+            "163-43": [3.97, 10.60, 23.01, 9.27], "101-117": [4.56, 11.04, 25.34, 10.90],
+            "295-22": [3.51, 11.08, 24.76, 10.83], "141-24": [2.74, 8.37, 18.71, 6.28],
+            "351-03": [0, 0, 0, 0]
         }
     };
 
-    const targetList = ['129-09','166-25','351-03','351-06','324-18','149-30','342-04'];
-    // 默认只勾选核心标杆线路，方便引导用户交互感知动效
-    let activeGatewayIds = ['129-09', '166-25'];
-    const colorPalette = ['#38bdf8', '#fbbf24', '#f472b6', '#34d399', '#a78bfa', '#f87171', '#818cf8', '#2dd4bf'];
+    const targetList = ['261-03','351-06','166-25','129-09','138-31','324-18','235-32'];
+    // 默认激活：基准线 + 您要求的两条重点线路
+    let activeGatewayIds = ['261-03', '351-06', '166-25'];
+    const colorPalette = ['#a78bfa', '#fbbf24', '#f472b6', '#34d399', '#38bdf8', '#f87171', '#818cf8', '#2dd4bf'];
     let charts = {};
 
     window.onload = function() {
         initUI();
         const ids = ['radar-chart','parallel-chart','scatter-chart','t-a','t-ab','t-dur','t-60s'];
         ids.forEach(id => charts[id] = echarts.init(document.getElementById(id)));
-        
         bindInteraction();
         refreshAll();
     };
@@ -96,11 +108,13 @@
     function initUI() {
         const sel = document.getElementById('date-select');
         Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
-        sel.value = "3.25";
+        sel.value = "3.26";
         const filterGroup = document.getElementById('gateway-filters');
         targetList.forEach(id => {
             const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
-            filterGroup.innerHTML += `<label><input type="checkbox" value="${id}" ${isChecked} onchange="updateGatewayFilter(this)"> ${id}</label>`;
+            // 基准线 261-03 在筛选栏特别标注
+            const labelStyle = id === '261-03' ? 'style="border-color:#a78bfa; color:#a78bfa; font-weight:bold"' : '';
+            filterGroup.innerHTML += `<label ${labelStyle}><input type="checkbox" value="${id}" ${isChecked} onchange="updateGatewayFilter(this)"> ${id}${id==='261-03'?'(基准)':''}</label>`;
         });
     }
 
@@ -110,34 +124,25 @@
     }
 
     function bindInteraction() {
-        charts['radar-chart'].on('legendmouseover', function(params) {
-            charts['parallel-chart'].dispatchAction({ type: 'highlight', seriesName: params.name });
-        });
-        charts['radar-chart'].on('legendmouseout', function() {
-            charts['parallel-chart'].dispatchAction({ type: 'downplay' });
-        });
-        charts['radar-chart'].on('legendselectchanged', function(params) {
-            charts['parallel-chart'].dispatchAction({ type: 'legendToggleSelect', name: params.name });
-        });
-        charts['parallel-chart'].on('mouseover', function(params) {
-            charts['radar-chart'].dispatchAction({ type: 'highlight', seriesName: params.seriesName });
-        });
-        charts['parallel-chart'].on('mouseout', function() {
-            charts['radar-chart'].dispatchAction({ type: 'downplay' });
-        });
+        charts['radar-chart'].on('legendmouseover', function(params) { charts['parallel-chart'].dispatchAction({ type: 'highlight', seriesName: params.name }); });
+        charts['radar-chart'].on('legendmouseout', function() { charts['parallel-chart'].dispatchAction({ type: 'downplay' }); });
+        charts['radar-chart'].on('legendselectchanged', function(params) { charts['parallel-chart'].dispatchAction({ type: 'legendToggleSelect', name: params.name }); });
+        charts['parallel-chart'].on('mouseover', function(params) { charts['radar-chart'].dispatchAction({ type: 'highlight', seriesName: params.seriesName }); });
+        charts['parallel-chart'].on('mouseout', function() { charts['radar-chart'].dispatchAction({ type: 'downplay' }); });
     }
 
     function refreshAll() {
         const date = document.getElementById('date-select').value;
         const dayData = HISTORY_DATA[date];
+        const benchmark = dayData['261-03'] || [0,0,0,0];
 
-        // 1. 雷达图
+        // 1. 雷达图 - 基准线特别加重
         charts['radar-chart'].setOption({
             color: colorPalette,
-            title: { text: '重点线路多维画像', textStyle: {color: '#f8fafc', fontSize: 16} },
+            title: { text: '重点线路多维画像 (基准:261-03)', textStyle: {color: '#f8fafc', fontSize: 16} },
             legend: { bottom: 0, textStyle: {color: '#94a3b8', fontSize: 10}, icon: 'circle', data: activeGatewayIds, selectedMode: true },
             radar: {
-                indicator: [{name:'A率',max:6.5},{name:'AB率',max:15},{name:'时长',max:30},{name:'超60s占比',max:15}],
+                indicator: [{name:'A率',max:7.5},{name:'AB率',max:16},{name:'时长',max:35},{name:'超60s占比',max:15}],
                 center: ['50%', '50%'], radius: '55%',
                 axisName: { color: '#38bdf8', fontWeight: 'bold' },
                 splitLine: { show: false }, splitArea: { show: false }, axisLine: { show: false } 
@@ -145,33 +150,26 @@
             series: activeGatewayIds.map((id, index) => ({
                 name: id, type: 'radar', data: [{name: id, value: dayData[id]}],
                 itemStyle: { color: colorPalette[index % colorPalette.length] },
+                lineStyle: { width: id === '261-03' ? 6 : 2, shadowBlur: id === '261-03' ? 10 : 0, shadowColor: '#a78bfa' },
                 areaStyle: {opacity: 0.05}
             }))
         }, true);
 
-        // 2. 平行特征图 - 动态生长动画增强
+        // 2. 平行特征图 - 基准线加粗
         charts['parallel-chart'].setOption({
-            animation: true,
-            animationDuration: 2000, 
-            animationEasing: 'exponentialOut',
+            animation: true, animationDuration: 2000, animationEasing: 'exponentialOut',
             title: { text: '网关四维特征平行图', textStyle: {color: '#f8fafc', fontSize: 16} },
-            legend: { show: false, data: activeGatewayIds },
             parallelAxis: [
-                {dim: 0, name: 'A率', max: 6.5, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
-                {dim: 1, name: 'AB率', max: 15, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
-                {dim: 2, name: '平均时长', max: 30, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 0, name: 'A率', max: 7.5, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 1, name: 'AB率', max: 16, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 2, name: '平均时长', max: 35, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
                 {dim: 3, name: '超60s占比', max: 15, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}}
             ],
-            parallel: { 
-                left: '12%', right: '15%', bottom: '15%', top: '22%', 
-                parallelAxisDefault: { axisLine: {lineStyle: {color: '#475569', width: 2}}, axisTick: { show: false }, splitLine: { show: false } } 
-            },
+            parallel: { left: '12%', right: '15%', bottom: '15%', top: '22%', parallelAxisDefault: { axisLine: {lineStyle: {color: '#475569', width: 2}}, axisTick: { show: false }, splitLine: { show: false } } },
             series: activeGatewayIds.map((id, index) => ({
-                name: id, type: 'parallel', lineStyle: {width: 4, opacity: 0.6, color: colorPalette[index % colorPalette.length]},
-                emphasis: {
-                    lineStyle: { width: 10, opacity: 1, shadowBlur: 20, shadowColor: colorPalette[index % colorPalette.length] },
-                    label: { show: true, formatter: '{a}', color: 'inherit', fontSize: 13, fontWeight: 'bold', position: 'end' }
-                },
+                name: id, type: 'parallel', 
+                lineStyle: { width: id === '261-03' ? 8 : 4, opacity: 0.6, color: colorPalette[index % colorPalette.length], shadowBlur: id === '261-03' ? 20 : 0, shadowColor: '#a78bfa' },
+                emphasis: { lineStyle: { width: 12, opacity: 1, shadowBlur: 20 }, label: { show: true, formatter: '{a}', color: 'inherit', fontWeight: 'bold', position: 'end' } },
                 data: [dayData[id]]
             }))
         }, true);
@@ -182,8 +180,8 @@
             xAxis: { name: '时长', axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
             yAxis: { name: 'A率', axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
             series: [{
-                type: 'scatter', data: activeGatewayIds.map(id => [dayData[id][2], dayData[id][0], id]), symbolSize: 20,
-                itemStyle: { color: '#38bdf8', borderColor: '#fff', borderWidth: 1 },
+                type: 'scatter', data: activeGatewayIds.map(id => [dayData[id][2], dayData[id][0], id]), symbolSize: (val) => val[2] === '261-03' ? 30 : 20,
+                itemStyle: { color: (params) => params.data[2] === '261-03' ? '#a78bfa' : '#38bdf8', borderColor: '#fff', borderWidth: 1 },
                 label: { show: true, formatter: '{@[2]}', position: 'top', color: '#fff', fontSize: 10 }
             }]
         }, true);
@@ -194,22 +192,26 @@
         metricParams.forEach(m => {
             charts[m[0]].setOption({
                 title: { text: m[2], textStyle: {color: '#f8fafc', fontSize: 14} },
-                tooltip: { trigger: 'axis' },
                 legend: { top: 30, textStyle: {color: '#94a3b8', fontSize: 10} },
                 xAxis: { type: 'category', data: dates, axisLabel: {color: '#94a3b8'} },
                 yAxis: { type: 'value', name: m[3], axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
                 grid: { top: '30%', bottom: '15%', left: '10%', right: '10%' },
                 series: activeGatewayIds.map((id, index) => ({
-                    name: id, type: 'line', smooth: true, lineStyle: {color: colorPalette[index % colorPalette.length]},
+                    name: id, type: 'line', smooth: true, lineStyle: { width: id === '261-03' ? 5 : 2, color: colorPalette[index % colorPalette.length] },
                     data: dates.map(d => HISTORY_DATA[d][id] ? HISTORY_DATA[d][id][m[1]] : null)
                 }))
             }, true);
         });
 
+        // 5. 表格分析建议 - 以基准线为核心参考
         const tbody = document.getElementById('table-body');
         tbody.innerHTML = activeGatewayIds.map(id => {
             const [a, ab, dur, s60] = dayData[id];
-            const advice = a > 5.5 ? '<b style="color:#38bdf8">高效标杆</b>' : (dur > 25 && a < 3 ? '<b style="color:#f87171">建议质检</b>' : '常规');
+            let advice = "";
+            if (id === '261-03') advice = '<b style="color:#a78bfa">系统基准线</b>';
+            else if (a > benchmark[0] && s60 < benchmark[3]) advice = '<b style="color:#38bdf8">优于基准线</b>';
+            else if (a < 3.5 || s60 > 12.5) advice = '<b style="color:#f87171">低于基准线</b>';
+            else advice = '常规持平';
             return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
         }).join('');
     }
