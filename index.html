@@ -2,142 +2,185 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>每日线路外呼效能诊断</title>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <title> 网关效能深度诊断中心</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
     <style>
-        body { background-color: #0b0f1a; color: #e2e8f0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; margin: 0; padding: 25px; }
-        .dashboard-header { text-align: left; border-left: 5px solid #38bdf8; padding-left: 20px; margin-bottom: 25px; }
-        .dashboard-header h1 { font-size: 24px; color: #f8fafc; margin: 0; letter-spacing: 1px; }
-        .container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
-        .card { background: #161e2d; border-radius: 16px; padding: 25px; border: 1px solid #1e293b; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        #radar-chart { width: 620px; height: 550px; }
-        #scatter-chart { width: 600px; height: 550px; }
-        .analysis-box { max-width: 1240px; margin: 25px auto; background: #1e293b; border-radius: 12px; padding: 20px; border: 1px dashed #334155; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        body { background-color: #0b0f1a; color: #e2e8f0; font-family: 'PingFang SC', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .dashboard-header { width: 100%; max-width: 1400px; border-left: 6px solid #38bdf8; padding-left: 20px; margin-bottom: 25px; text-align: left; }
+        .dashboard-header h1 { font-size: 28px; color: #f8fafc; margin: 0; font-weight: bold; }
+        .dashboard-header p { color: #8b949e; margin: 5px 0 0 0; }
+        
+        /* 筛选控制栏 */
+        .control-panel { width: 100%; max-width: 1360px; background: #161e2d; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #1e293b; display: flex; align-items: center; gap: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .checkbox-group label { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 5px; }
+        
+        /* 画布容器 - 三列布局 */
+        .container { width: 100%; max-width: 1400px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .card { background: #161e2d; border: 1px solid #1e293b; border-radius: 16px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); min-height: 420px; box-sizing: border-box; }
+        
+        #radar-chart, #parallel-chart, #scatter-chart { width: 100%; height: 380px; }
+
+        .analysis-box { width: 100%; max-width: 1360px; background: #161e2d; border-radius: 12px; padding: 20px; border: 1px solid #1e293b; margin-bottom: 25px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
         th { padding: 10px; color: #94a3b8; border-bottom: 1px solid #334155; }
-        td { padding: 12px 15px; border-bottom: 1px solid #334155; }
+        td { padding: 12px 10px; border-bottom: 1px solid #334155; }
+
+        .trend-grid-container { width: 100%; max-width: 1400px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 25px; }
+        .card-trend { min-height: 320px; }
+        #t-a, #t-ab, #t-dur, #t-60s { width: 100%; height: 300px; }
     </style>
 </head>
 <body>
 
 <div class="dashboard-header">
-    <h1 id="main-title">线路外呼效能诊断看板</h1>
-    <p style="color: #94a3b8;">当前重点关注：324-18, 129-09, 351-06, 166-25, 351-03, 235-32, 149-30, 342-04</p>
+    <h1 id="main-title">网关效能深度诊断中心</h1>
+    <p>自3.24起历史数据与多维平行特征对比</p>
+</div>
+
+<div class="control-panel">
+    <div><label style="color:#8b949e">📅 日期选择：</label><select id="date-select" onchange="refreshAll()" style="background:#21262d;color:#fff;border:1px solid #30363d;padding:5px;border-radius:4px;"></select></div>
+    <div class="checkbox-group" id="gateway-filters"><label style="color:#8b949e">🔍 线路对比：</label></div>
 </div>
 
 <div class="container">
     <div class="card"><div id="radar-chart"></div></div>
+    <div class="card"><div id="parallel-chart"></div></div>
     <div class="card"><div id="scatter-chart"></div></div>
 </div>
 
 <div class="analysis-box">
-    <h3 style="color: #38bdf8; margin-top: 0;">🔍 核心网关指标分析</h3>
-    <table id="analysis-table">
-        <tr><th>网关编号</th><th>综合画像</th><th>业务建议</th></tr>
-        </table>
+    <h3 style="color:#38bdf8;margin:0 0 15px 0">🔍 当日网关效能智能评估建议</h3>
+    <table>
+        <thead><tr><th>网关 ID</th><th>A率(意向)</th><th>AB率</th><th>平均时长</th><th>超60s占比</th><th>综合评价</th></tr></thead>
+        <tbody id="table-body"></tbody>
+    </table>
 </div>
 
-<script type="text/javascript">
-    const now = new Date();
-    const dateStr = (now.getMonth() + 1) + '.' + now.getDate();
-    document.getElementById('main-title').innerText = dateStr + ' 线路外呼效能诊断看板';
+<div class="dashboard-header" style="margin-top: 25px;">
+    <h1>历史趋势博弈矩阵</h1>
+    <p>关键指标随时间的动态演变</p>
+</div>
+<div class="trend-grid-container">
+    <div class="card card-trend"><div id="t-a"></div></div>
+    <div class="card card-trend"><div id="t-ab"></div></div>
+    <div class="card card-trend"><div id="t-dur"></div></div>
+    <div class="card card-trend"><div id="t-60s"></div></div>
+</div>
 
-    // 更新后的 8 条重点网关
-    const highlightList = ['324-18', '129-09', '351-06', '166-25', '351-03', '235-32', '149-30', '342-04'];
-    
-    // 1. 雷达图：解决重叠的终极布局
-    const radarChart = echarts.init(document.getElementById('radar-chart'));
-    radarChart.setOption({
-        color: ['#38bdf8', '#fbbf24', '#f472b6', '#34d399', '#a78bfa', '#f87171', '#818cf8', '#2dd4bf'],
-        title: { text: dateStr + ' 新线路外呼效果比较', left: 'center', textStyle: {color: '#f8fafc', fontSize: 18} },
-        legend: { 
-            bottom: '2%',      // 强制图例沉底
-            orient: 'horizontal',
-            itemGap: 12,
-            textStyle: {color: '#94a3b8', fontSize: 11}, 
-            icon: 'circle',
-            data: highlightList,
-            padding: [5, 10]
+<script>
+    // 固化历史数据仓库
+    const HISTORY_DATA = {
+        "3.24": {
+            "129-09": [5.31, 10.79, 23.47, 8.84], "138-31": [4.26, 11.23, 22.95, 8.41],
+            "149-30": [2.12, 7.91, 19.34, 5.83], "166-25": [5.71, 11.23, 24.11, 9.71],
+            "235-32": [3.81, 7.91, 23.41, 8.41], "295-24": [3.31, 8.32, 21.61, 7.39],
+            "324-18": [3.31, 8.32, 21.61, 7.39], "342-04": [4.11, 8.83, 19.82, 5.21],
+            "351-03": [2.77, 9.31, 26.21, 12.31], "351-06": [3.77, 10.21, 24.11, 10.53]
         },
-        radar: {
-            center: ['50%', '45%'], // 中心点上移，给底部图例腾位置
-            radius: '55%',          // 缩小半径，防止重叠
-            indicator: [
-                { name: 'A率(意向)', max: 6 },
-                { name: 'AB率', max: 14 },
-                { name: '平均时长', max: 28 },
-                { name: '超60s占比', max: 13 }
-            ],
-            axisName: { 
-                color: '#ffffff', 
-                backgroundColor: '#334155', 
-                borderRadius: 4, 
-                padding: [4, 8],
-                fontSize: 12
+        "3.25": {
+            "129-09": [5.87, 13.05, 24.58, 10.84], "138-31": [4.29, 13.50, 24.62, 9.82],
+            "149-30": [2.45, 7.98, 18.74, 6.13], "166-25": [5.73, 10.79, 24.18, 9.69],
+            "235-32": [3.84, 7.92, 23.41, 8.45], "295-24": [3.34, 8.37, 21.74, 7.42],
+            "324-18": [3.32, 9.51, 22.81, 9.17], "342-04": [3.92, 8.82, 19.25, 4.90],
+            "351-03": [3.67, 8.56, 21.32, 6.36], "351-06": [2.81, 9.06, 25.63, 11.56]
+        }
+    };
+
+    const targetList = ['129-09','166-25','351-03','351-06','324-18','149-30','342-04'];
+    const colorPalette = ['#38bdf8', '#fbbf24', '#f472b6', '#34d399', '#a78bfa', '#f87171', '#818cf8', '#2dd4bf'];
+    let charts = {};
+
+    window.onload = function() {
+        initUI();
+        const ids = ['radar-chart','parallel-chart','scatter-chart','t-a','t-ab','t-dur','t-60s'];
+        ids.forEach(id => charts[id] = echarts.init(document.getElementById(id)));
+        refreshAll();
+    };
+
+    function initUI() {
+        const sel = document.getElementById('date-select');
+        Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
+        sel.value = "3.25";
+        const filterGroup = document.getElementById('gateway-filters');
+        targetList.forEach(id => {
+            filterGroup.innerHTML += `<label><input type="checkbox" value="${id}" checked onchange="refreshAll()"> ${id}</label>`;
+        });
+    }
+
+    function refreshAll() {
+        const date = document.getElementById('date-select').value;
+        const activeIds = Array.from(document.querySelectorAll('#gateway-filters input:checked')).map(i => i.value);
+        const dayData = HISTORY_DATA[date];
+
+        // 1. 雷达图
+        charts['radar-chart'].setOption({
+            color: colorPalette,
+            title: { text: '重点线路多维画像', textStyle: {color: '#f8fafc', fontSize: 16} },
+            legend: { bottom: 0, textStyle: {color: '#94a3b8', fontSize: 10}, icon: 'circle', data: activeIds },
+            radar: {
+                indicator: [{name:'A率',max:6.5},{name:'AB率',max:15},{name:'时长',max:30},{name:'超60s',max:15}],
+                center: ['50%', '50%'], radius: '55%',
+                axisName: { color: '#38bdf8', fontWeight: 'bold' },
+                splitArea: {show: false}, axisLine: {lineStyle: {color: '#30363d'}}
             },
-            nameGap: 40, // 指标文字离图表的间距加大
-            splitLine: { lineStyle: { color: '#334155' } },
-            axisLine: { lineStyle: { color: '#475569' } }
-        },
-        series: [{
-            type: 'radar',
-            data: [
-                {name: '324-18', value: [4.28, 9.94, 22.25, 8.25]},
-                {name: '129-09', value: [4.12, 11.61, 24.75, 10.96]},
-                {name: '351-06', value: [3.91, 10.53, 24.07, 10.98]},
-                {name: '166-25', value: [5.73, 10.79, 24.18, 9.69]},
-                {name: '351-03', value: [2.78, 9.44, 26.27, 12.50]},
-                {name: '235-32', value: [3.84, 7.92, 23.41, 8.45]},
-                {name: '149-30', value: [2.45, 7.98, 18.74, 6.13]},
-                {name: '342-04', value: [3.92, 8.82, 19.25, 4.90]}
+            series: [{ type: 'radar', data: activeIds.map(id => ({name:id, value:dayData[id]})), areaStyle: {opacity: 0.05} }]
+        }, true);
+
+        // 2. 平行特征图
+        charts['parallel-chart'].setOption({
+            title: { text: '网关四维特征平行图', textStyle: {color: '#f8fafc', fontSize: 16} },
+            parallelAxis: [
+                {dim: 0, name: 'A率', max: 6.5, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 1, name: 'AB率', max: 15, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 2, name: '时长', max: 30, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 3, name: '超60s占比', max: 15, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}}
             ],
-            symbolSize: 4,
-            areaStyle: { opacity: 0.02 }
-        }]
-    });
+            parallel: { left: '12%', right: '15%', bottom: '15%', top: '22%', parallelAxisDefault: { axisLine: {lineStyle: {color: '#475569', width: 2}} } },
+            series: activeIds.map((id, index) => ({
+                name: id, type: 'parallel', lineStyle: {width: 4, opacity: 0.6, color: colorPalette[index % colorPalette.length]},
+                data: [dayData[id]]
+            }))
+        }, true);
 
-    // 2. 散点图
-    const scatterChart = echarts.init(document.getElementById('scatter-chart'));
-    const allData = [
-        [22.48, 3.21, '163-43'], [25.67, 5.31, '261-03'], [22.25, 4.28, '324-18'],
-        [23.41, 3.84, '235-32'], [23.96, 4.72, '189-48'], [23.80, 3.88, '138-31'],
-        [24.75, 4.12, '129-09'], [21.68, 3.37, '295-24'], [24.07, 3.91, '351-06'],
-        [24.18, 5.73, '166-25'], [26.27, 2.78, '351-03'], [18.74, 2.45, '149-30'],
-        [19.25, 3.92, '342-04'], [23.26, 3.62, '101-117'], [23.29, 2.93, '141-24']
-    ];
+        // 3. 转化效率分布图
+        charts['scatter-chart'].setOption({
+            title: { text: '转化效率分布', textStyle: {color: '#f8fafc', fontSize: 16} },
+            xAxis: { name: '时长', axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
+            yAxis: { name: 'A率', axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
+            series: [{
+                type: 'scatter', data: activeIds.map(id => [dayData[id][2], dayData[id][0], id]), symbolSize: 20,
+                itemStyle: { color: '#38bdf8', borderColor: '#fff', borderWidth: 1 },
+                label: { show: true, formatter: '{@[2]}', position: 'top', color: '#fff', fontSize: 10 }
+            }]
+        }, true);
 
-    scatterChart.setOption({
-        title: { text: '全网关分布象限图', left: 'center', textStyle: {color: '#f8fafc', fontSize: 18} },
-        xAxis: { name: '时长(s)', axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#334155'}} },
-        yAxis: { name: 'A率(%)', axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#334155'}} },
-        series: [{
-            type: 'scatter',
-            data: allData,
-            symbolSize: (d) => highlightList.includes(d[2]) ? 20 : 10,
-            itemStyle: {
-                color: (p) => highlightList.includes(p.data[2]) ? '#38bdf8' : '#334155',
-                borderColor: '#fff',
-                borderWidth: (p) => highlightList.includes(p.data[2]) ? 2 : 0
-            },
-            label: { show: true, formatter: '{@[2]}', position: 'top', color: '#cbd5e1', fontSize: 10 },
-            markLine: {
-                lineStyle: { type: 'dotted', color: '#64748b' },
-                data: [ {xAxis: 23.5, label: {formatter: '平均时长'}} ]
-            }
-        }]
-    });
+        // 4. 历史趋势矩阵
+        const dates = Object.keys(HISTORY_DATA);
+        const metrics = [['t-a', 0, '历史 A率 趋势', '%'], ['t-ab', 1, '历史 AB率 趋势', '%'], ['t-dur', 2, '历史平均时长 趋势', 's'], ['t-60s', 3, '历史 60s以上占比 趋势', '%']];
+        metrics.forEach(m => {
+            charts[m[0]].setOption({
+                title: { text: m[2], textStyle: {color: '#f8fafc', fontSize: 14} },
+                tooltip: { trigger: 'axis' },
+                legend: { top: 30, textStyle: {color: '#94a3b8', fontSize: 10} },
+                xAxis: { type: 'category', data: dates, axisLabel: {color: '#94a3b8'} },
+                yAxis: { type: 'value', name: m[3], axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
+                grid: { top: '30%', bottom: '15%', left: '10%', right: '10%' },
+                series: activeIds.map((id, index) => ({
+                    name: id, type: 'line', smooth: true, lineStyle: {color: colorPalette[index % colorPalette.length]},
+                    itemStyle: {color: colorPalette[index % colorPalette.length]},
+                    data: dates.map(d => HISTORY_DATA[d][id] ? HISTORY_DATA[d][id][m[1]] : null)
+                }))
+            }, true);
+        });
 
-    // 3. 动态业务分析
-    const advice = [
-        {id: '166-25', img: '<b>【今日顶尖】</b> A率 (5.73%) 全网第一，转化极其精准。', adv: '核心高意向线路'},
-        {id: '129-09 / 351-06', img: '<b>【主力稳健】</b> 高通话深度 (超60s占比11%) 配合平稳意向。', adv: '建议持续跑量'},
-        {id: '351-03', img: '<b>【严重损耗】</b> 时长最高 (26.2s) 却产出最低 A率。', adv: '⚠️ 建议检查话术匹配度'},
-        {id: '149-30 / 342-04', img: '<b>【浅层流失】</b> 时长不足 20s，用户接听意愿极低。', adv: '检查号码质量/标记'}
-    ];
-    const table = document.getElementById('analysis-table');
-    advice.forEach(item => {
-        table.innerHTML += `<tr><td style="color:#38bdf8; font-weight:bold;">${item.id}</td><td>${item.img}</td><td>${item.adv}</td></tr>`;
-    });
+        // 5. 表格分析
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = activeIds.map(id => {
+            const [a, ab, dur, s60] = dayData[id];
+            const advice = a > 5.5 ? '<b style="color:#38bdf8">高效标杆</b>' : (dur > 25 && a < 3 ? '<b style="color:#f87171">无效拉锯</b>' : '运行平稳');
+            return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
+        }).join('');
+    }
 </script>
 </body>
 </html>
