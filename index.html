@@ -13,7 +13,7 @@
         .checkbox-group label { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 5px; transition: all 0.3s; }
         .checkbox-group label:hover { border-color: #38bdf8; color: #38bdf8; }
         .container { width: 100%; max-width: 1400px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .card { background: #161e2d; border: 1px solid #1e293b; border-radius: 16px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); min-height: 420px; box-sizing: border-box; }
+        .card { background: #161e2d; border: 1px solid #1e293b; border-radius: 16px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); min-height: 380px; box-sizing: border-box; }
         #radar-chart, #parallel-chart, #scatter-chart { width: 100%; height: 380px; }
         .analysis-box { width: 100%; max-width: 1360px; background: #161e2d; border-radius: 12px; padding: 20px; border: 1px solid #1e293b; margin-bottom: 25px; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
@@ -27,7 +27,7 @@
 
 <div class="dashboard-header">
     <h1>网关效能深度诊断中心</h1>
-    <p>基准线：139-14 | 实时历史数据与多维度对比</p>
+    <p>基准线：139-14 | 自3.24起历史数据与多维度对比</p>
 </div>
 
 <div class="control-panel">
@@ -51,7 +51,7 @@
 
 <div class="dashboard-header" style="margin-top: 25px;">
     <h1>历史趋势博弈矩阵</h1>
-    <p>关键指标随时间的动态演变（139-14为紫色基准线）</p>
+    <p>关键指标随时间的动态演变（139-14为加粗基准线）</p>
 </div>
 <div class="trend-grid-container">
     <div class="card"><div id="t-a"></div></div>
@@ -61,20 +61,20 @@
 </div>
 
 <script>
+    // 历史数据库
     const HISTORY_DATA = {
-        "3.30": { "261-03": [4.59, 16.21, 26.98, 12.74], "155-08": [3.98, 14.65, 25.92, 11.80], "166-25": [3.78, 14.14, 25.85, 12.38], "129-09": [4.15, 13.58, 25.42, 12.88] },
-        "4.01": { "261-03": [5.12, 17.44, 28.88, 13.59], "166-25": [3.91, 13.88, 26.63, 12.94], "149-31": [4.75, 17.12, 27.59, 12.62], "171-29": [5.22, 17.62, 28.81, 13.96] },
-        "4.27": { // 4.27 最新数据，基准切换为 139-14
-            "139-14": [4.40, 15.91, 28.46, 14.42], "391-02": [3.69, 14.29, 25.71, 11.82],
-            "103-171": [4.65, 15.93, 27.25, 13.35], "161-53": [4.88, 16.01, 28.06, 13.41],
-            "230-23": [3.38, 12.30, 23.50, 10.68], "400-02": [3.50, 10.74, 22.42, 8.49],
-            "141-40": [3.22, 14.87, 20.30, 10.61]
+        "3.30": { "261-03": [4.59, 16.21, 26.98, 12.74], "139-14": [4.37, 16.21, 28.50, 13.97] },
+        "4.01": { "261-03": [5.12, 17.44, 28.88, 13.59], "139-14": [4.37, 16.21, 28.50, 13.97] },
+        "4.28": { // 4.28 投喂数据
+            "139-14": [4.37, 16.21, 28.50, 13.97], "391-02": [3.89, 14.58, 26.68, 12.19],
+            "103-171": [3.98, 14.23, 26.03, 11.91], "161-53": [3.89, 14.66, 27.57, 13.47],
+            "231-09": [3.22, 12.34, 25.08, 10.97], "352-10": [3.95, 14.16, 24.65, 10.93]
         }
     };
 
-    const targetList = ['139-14','391-02','103-171','161-53','230-23','400-02','141-40'];
-    let activeGatewayIds = ['139-14', '161-53', '103-171'];
-    const colorPalette = ['#a78bfa', '#fbbf24', '#f472b6', '#34d399', '#38bdf8', '#f87171', '#818cf8', '#2dd4bf'];
+    const targetList = ['139-14','391-02','103-171','161-53','231-09','352-10'];
+    let activeGatewayIds = ['139-14', '352-10', '103-171'];
+    const colorPalette = ['#a78bfa', '#fbbf24', '#f472b6', '#34d399', '#38bdf8', '#f87171'];
     let charts = {};
 
     window.onload = function() {
@@ -88,7 +88,7 @@
     function initUI() {
         const sel = document.getElementById('date-select');
         Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
-        sel.value = "4.27";
+        sel.value = "4.28";
         const filterGroup = document.getElementById('gateway-filters');
         targetList.forEach(id => {
             const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
@@ -115,6 +115,7 @@
         const dayData = HISTORY_DATA[date];
         const benchmark = dayData['139-14'] || [0,0,0,0];
 
+        // 1. 雷达图
         charts['radar-chart'].setOption({
             color: colorPalette,
             title: { text: '画像对比 VS 139-14', textStyle: {color: '#f8fafc', fontSize: 16} },
@@ -133,6 +134,7 @@
             }))
         }, true);
 
+        // 2. 平行特征图
         charts['parallel-chart'].setOption({
             animation: true, animationDuration: 2000, animationEasing: 'exponentialOut',
             title: { text: '网关四维平行特征', textStyle: {color: '#f8fafc', fontSize: 16} },
@@ -151,6 +153,7 @@
             }))
         }, true);
 
+        // 3. 散点图
         charts['scatter-chart'].setOption({
             title: { text: '转化效率分布', textStyle: {color: '#f8fafc', fontSize: 16} },
             xAxis: { name: '时长', axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
@@ -162,6 +165,7 @@
             }]
         }, true);
 
+        // 4. 趋势
         const dates = Object.keys(HISTORY_DATA);
         const metrics = [['t-a', 0, 'A率趋势', '%'], ['t-ab', 1, 'AB率趋势', '%'], ['t-dur', 2, '时长趋势', 's'], ['t-60s', 3, '占比趋势', '%']];
         metrics.forEach(m => {
@@ -183,8 +187,8 @@
             const [a, ab, dur, s60] = dayData[id];
             let advice = "";
             if (id === '139-14') advice = '<b style="color:#a78bfa">系统基准线</b>';
-            else if (a >= benchmark[0] && s60 <= benchmark[3]) advice = '<b style="color:#38bdf8">效率标杆</b>';
-            else if (a < 3.0 || s60 > 15) advice = '<b style="color:#f87171">低于预期</b>';
+            else if (a >= benchmark[0] * 0.9 && s60 <= benchmark[3]) advice = '<b style="color:#38bdf8">效率标杆</b>';
+            else if (a < 3.5 || s60 > 15) advice = '<b style="color:#f87171">低于预期</b>';
             else advice = '常规持平';
             return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
         }).join('');
