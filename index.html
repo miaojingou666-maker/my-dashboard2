@@ -27,7 +27,7 @@
 
 <div class="dashboard-header">
     <h1>网关效能深度诊断中心</h1>
-    <p>基准线：116-14 | 自 3.24 起历史对比与 4.29 诊断</p>
+    <p>基准线：116-14 | 自3.24起历史数据与多维度对比</p>
 </div>
 
 <div class="control-panel">
@@ -51,7 +51,7 @@
 
 <div class="dashboard-header" style="margin-top: 25px;">
     <h1>历史趋势博弈矩阵</h1>
-    <p>关键指标演变（116-14 为紫色霓虹基准线）</p>
+    <p>关键指标随时间的动态演变（116-14为加粗基准线）</p>
 </div>
 <div class="trend-grid-container">
     <div class="card"><div id="t-a"></div></div>
@@ -62,21 +62,17 @@
 
 <script>
     const HISTORY_DATA = {
-        "3.30": { "116-14": [3.90, 14.62, 26.89, 13.04] },
-        "4.28": { "116-14": [3.90, 14.62, 26.89, 13.04] },
-        "4.29": { 
-            "116-14": [3.92, 15.54, 27.99, 13.90],
-            "352-10": [3.76, 13.50, 24.18, 11.06],
-            "163-43": [3.96, 15.00, 26.41, 12.52],
-            "149-33": [4.09, 15.56, 26.36, 11.75],
-            "235-36": [2.78, 11.36, 23.42, 10.52],
-            "231-09": [4.84, 16.79, 26.02, 12.32],
-            "178-17": [2.22, 9.20, 19.56, 7.19]
+        "4.29": { "116-14": [3.92, 15.54, 27.99, 13.90], "352-10": [3.76, 13.50, 24.18, 11.06], "163-43": [3.96, 15.00, 26.41, 12.52], "149-33": [4.09, 15.56, 26.36, 11.75] },
+        "5.06": { // 5.06 投喂数据
+            "116-14": [3.54, 14.39, 27.22, 13.25], "391-02": [3.86, 14.81, 26.38, 12.20],
+            "156-47": [2.94, 11.86, 24.14, 10.38], "149-33": [3.48, 14.19, 25.56, 11.32],
+            "330-05": [2.44, 12.22, 24.49, 9.63], "399-03": [2.40, 12.70, 20.28, 7.48],
+            "161-53": [3.28, 10.98, 21.80, 9.63]
         }
     };
 
-    const targetList = ['116-14','352-10','163-43','149-33','235-36','231-09','178-17'];
-    let activeGatewayIds = ['116-14', '231-09', '149-33'];
+    const targetList = ['116-14','391-02','156-47','149-33','330-05','399-03','161-53'];
+    let activeGatewayIds = ['116-14', '391-02', '149-33'];
     const colorPalette = ['#a78bfa', '#fbbf24', '#f472b6', '#34d399', '#38bdf8', '#f87171', '#818cf8'];
     let charts = {};
 
@@ -91,7 +87,7 @@
     function initUI() {
         const sel = document.getElementById('date-select');
         Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
-        sel.value = "4.29";
+        sel.value = "5.06";
         const filterGroup = document.getElementById('gateway-filters');
         targetList.forEach(id => {
             const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
@@ -120,7 +116,7 @@
 
         charts['radar-chart'].setOption({
             color: colorPalette,
-            title: { text: '画像对比 VS 116-14', textStyle: {color: '#f8fafc', fontSize: 16} },
+            title: { text: '重点画像对比 VS 基准', textStyle: {color: '#f8fafc', fontSize: 16} },
             legend: { bottom: 0, textStyle: {color: '#94a3b8', fontSize: 10}, icon: 'circle', data: activeGatewayIds, selectedMode: true },
             radar: {
                 indicator: [{name:'A率',max:6.5},{name:'AB率',max:20},{name:'时长',max:35},{name:'超60s占比',max:16}],
@@ -142,7 +138,7 @@
             parallelAxis: [
                 {dim: 0, name: 'A率', max: 6.5, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
                 {dim: 1, name: 'AB率', max: 20, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
-                {dim: 2, name: '时长', max: 35, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 2, name: '平均时长', max: 35, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
                 {dim: 3, name: '超60s占比', max: 16, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}}
             ],
             parallel: { left: '12%', right: '15%', bottom: '15%', top: '22%', parallelAxisDefault: { axisLine: {lineStyle: {color: '#475569', width: 2}}, axisTick: { show: false }, splitLine: { show: false } } },
@@ -187,7 +183,7 @@
             let advice = "";
             if (id === '116-14') advice = '<b style="color:#a78bfa">系统基准线</b>';
             else if (a >= benchmark[0] && s60 <= benchmark[3]) advice = '<b style="color:#38bdf8">效率标杆</b>';
-            else if (a < 3.0 || s60 > 15) advice = '<b style="color:#f87171">低于预期</b>';
+            else if (a < 3.0 || s60 > 14) advice = '<b style="color:#f87171">低于预期</b>';
             else advice = '常规持平';
             return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
         }).join('');
