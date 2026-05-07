@@ -13,7 +13,7 @@
         .checkbox-group label { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 5px; transition: all 0.3s; }
         .checkbox-group label:hover { border-color: #38bdf8; color: #38bdf8; }
         .container { width: 100%; max-width: 1400px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .card { background: #161e2d; border: 1px solid #1e293b; border-radius: 16px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); min-height: 420px; box-sizing: border-box; }
+        .card { background: #161e2d; border: 1px solid #1e293b; border-radius: 16px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); min-height: 380px; box-sizing: border-box; }
         #radar-chart, #parallel-chart, #scatter-chart { width: 100%; height: 380px; }
         .analysis-box { width: 100%; max-width: 1360px; background: #161e2d; border-radius: 12px; padding: 20px; border: 1px solid #1e293b; margin-bottom: 25px; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
@@ -62,18 +62,17 @@
 
 <script>
     const HISTORY_DATA = {
-        "4.29": { "116-14": [3.92, 15.54, 27.99, 13.90], "352-10": [3.76, 13.50, 24.18, 11.06], "163-43": [3.96, 15.00, 26.41, 12.52], "149-33": [4.09, 15.56, 26.36, 11.75] },
-        "5.06": { // 5.06 投喂数据
-            "116-14": [3.54, 14.39, 27.22, 13.25], "391-02": [3.86, 14.81, 26.38, 12.20],
-            "156-47": [2.94, 11.86, 24.14, 10.38], "149-33": [3.48, 14.19, 25.56, 11.32],
-            "330-05": [2.44, 12.22, 24.49, 9.63], "399-03": [2.40, 12.70, 20.28, 7.48],
-            "161-53": [3.28, 10.98, 21.80, 9.63]
+        "5.06": { "116-14": [3.54, 14.39, 27.22, 13.25], "391-02": [3.86, 14.81, 26.38, 12.20], "149-33": [3.48, 14.19, 25.56, 11.32] },
+        "5.07": { // 5.07 投喂数据
+            "116-14": [3.41, 13.55, 25.99, 12.21], "391-02": [4.24, 16.17, 28.50, 13.87],
+            "149-33": [3.41, 14.75, 26.09, 11.54], "357-05": [3.19, 12.58, 23.88, 10.87],
+            "395-02": [3.49, 13.28, 25.69, 13.38], "155-08": [4.12, 15.43, 26.88, 12.31]
         }
     };
 
-    const targetList = ['116-14','391-02','156-47','149-33','330-05','399-03','161-53'];
-    let activeGatewayIds = ['116-14', '391-02', '149-33'];
-    const colorPalette = ['#a78bfa', '#fbbf24', '#f472b6', '#34d399', '#38bdf8', '#f87171', '#818cf8'];
+    const targetList = ['116-14','391-02','149-33','357-05','395-02','155-08'];
+    let activeGatewayIds = ['116-14', '155-08', '391-02'];
+    const colorPalette = ['#a78bfa', '#fbbf24', '#f472b6', '#34d399', '#38bdf8', '#f87171'];
     let charts = {};
 
     window.onload = function() {
@@ -87,7 +86,7 @@
     function initUI() {
         const sel = document.getElementById('date-select');
         Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
-        sel.value = "5.06";
+        sel.value = "5.07";
         const filterGroup = document.getElementById('gateway-filters');
         targetList.forEach(id => {
             const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
@@ -116,7 +115,7 @@
 
         charts['radar-chart'].setOption({
             color: colorPalette,
-            title: { text: '重点画像对比 VS 基准', textStyle: {color: '#f8fafc', fontSize: 16} },
+            title: { text: '画像对比 VS 基准', textStyle: {color: '#f8fafc', fontSize: 16} },
             legend: { bottom: 0, textStyle: {color: '#94a3b8', fontSize: 10}, icon: 'circle', data: activeGatewayIds, selectedMode: true },
             radar: {
                 indicator: [{name:'A率',max:6.5},{name:'AB率',max:20},{name:'时长',max:35},{name:'超60s占比',max:16}],
@@ -161,18 +160,17 @@
             }]
         }, true);
 
-        const dates = Object.keys(HISTORY_DATA);
         const metrics = [['t-a', 0, 'A率趋势', '%'], ['t-ab', 1, 'AB率趋势', '%'], ['t-dur', 2, '时长趋势', 's'], ['t-60s', 3, '占比趋势', '%']];
         metrics.forEach(m => {
             charts[m[0]].setOption({
                 title: { text: m[2], textStyle: {color: '#f8fafc', fontSize: 14} },
                 legend: { top: 30, textStyle: {color: '#94a3b8', fontSize: 10} },
-                xAxis: { type: 'category', data: dates, axisLabel: {color: '#94a3b8'} },
+                xAxis: { type: 'category', data: Object.keys(HISTORY_DATA), axisLabel: {color: '#94a3b8'} },
                 yAxis: { type: 'value', name: m[3], axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
                 grid: { top: '30%', bottom: '15%', left: '10%', right: '10%' },
                 series: targetList.map((id, index) => ({
                     name: id, type: 'line', smooth: true, lineStyle: { width: id === '116-14' ? 5 : 2, color: colorPalette[index % colorPalette.length] },
-                    data: dates.map(d => HISTORY_DATA[d][id] ? HISTORY_DATA[d][id][m[1]] : null)
+                    data: Object.keys(HISTORY_DATA).map(d => HISTORY_DATA[d][id] ? HISTORY_DATA[d][id][m[1]] : null)
                 }))
             }, true);
         });
