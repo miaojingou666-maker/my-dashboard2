@@ -27,7 +27,7 @@
 
 <div class="dashboard-header">
     <h1>网关效能深度诊断中心</h1>
-    <p>基准线：166-32 | 实时数据与多维度博弈对比</p>
+    <p>基准线：166-32 | 实时数据与多维度对比诊断</p>
 </div>
 
 <div class="control-panel">
@@ -51,7 +51,7 @@
 
 <div class="dashboard-header" style="margin-top: 25px;">
     <h1>历史趋势博弈矩阵</h1>
-    <p>关键指标演变（166-32 为加粗紫色基准线）</p>
+    <p>关键指标随时间的动态演变（166-32为加粗紫色基准线）</p>
 </div>
 <div class="trend-grid-container">
     <div class="card"><div id="t-a"></div></div>
@@ -61,18 +61,17 @@
 </div>
 
 <script>
-    // 5.11 完整数据集成
     const HISTORY_DATA = {
-        "5.09": { "166-32": [4.89, 17.78, 25.65, 12.13], "143-13": [4.10, 14.58, 25.25, 11.17], "139-15": [4.48, 15.65, 25.53, 11.59], "408-01": [3.27, 14.30, 25.72, 11.48] },
-        "5.11": { // 数据提取自 image_87b94f.jpg 和 image_8757f1.jpg
-            "166-32": [4.21, 15.10, 23.92, 10.63], "143-13": [3.89, 14.81, 25.83, 11.81],
-            "139-15": [3.96, 14.30, 24.72, 10.94], "408-01": [3.37, 14.48, 27.15, 12.49], 
-            "246-74": [3.91, 15.23, 26.98, 12.74], "129-11": [3.61, 15.02, 23.19, 9.11]
+        "5.11": { "166-32": [4.21, 15.10, 23.92, 10.63] },
+        "5.12": { // 5.12 投喂数据
+            "166-32": [4.60, 20.59, 28.92, 14.47], "166-35": [5.37, 22.75, 30.38, 15.53],
+            "246-74": [3.87, 17.78, 29.52, 14.98], "395-02": [3.76, 17.79, 30.05, 16.68],
+            "282-07": [3.62, 16.64, 27.92, 12.90], "235-38": [2.39, 12.34, 27.72, 11.93]
         }
     };
 
-    const targetList = ['166-32','143-13','139-15','408-01','246-74','129-11'];
-    let activeGatewayIds = ['166-32', '139-15', '408-01'];
+    const targetList = ['166-32','166-35','246-74','395-02','282-07','235-38'];
+    let activeGatewayIds = ['166-32', '166-35', '282-07'];
     const colorPalette = ['#a78bfa', '#fbbf24', '#f472b6', '#34d399', '#38bdf8', '#f87171'];
     let charts = {};
 
@@ -87,7 +86,7 @@
     function initUI() {
         const sel = document.getElementById('date-select');
         Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
-        sel.value = "5.11";
+        sel.value = "5.12";
         const filterGroup = document.getElementById('gateway-filters');
         targetList.forEach(id => {
             const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
@@ -104,7 +103,7 @@
     function bindInteraction() {
         charts['radar-chart'].on('legendmouseover', function(params) { charts['parallel-chart'].dispatchAction({ type: 'highlight', seriesName: params.name }); });
         charts['radar-chart'].on('legendmouseout', function() { charts['parallel-chart'].dispatchAction({ type: 'downplay' }); });
-        charts['radar-chart'].on('legendselectchanged', function(params) { charts['parallel-chart'].dispatchAction({ type: 'legendToggleSelect', name: params.name }); });
+        charts['radar-chart'].on('mouseover', function(params) { charts['radar-chart'].dispatchAction({ type: 'highlight', seriesName: params.seriesName }); });
         charts['parallel-chart'].on('mouseover', function(params) { charts['radar-chart'].dispatchAction({ type: 'highlight', seriesName: params.seriesName }); });
         charts['parallel-chart'].on('mouseout', function() { charts['radar-chart'].dispatchAction({ type: 'downplay' }); });
     }
@@ -116,10 +115,10 @@
 
         charts['radar-chart'].setOption({
             color: colorPalette,
-            title: { text: '画像对比 VS 基准', textStyle: {color: '#f8fafc', fontSize: 16} },
+            title: { text: '画像对比 VS 166-32', textStyle: {color: '#f8fafc', fontSize: 16} },
             legend: { bottom: 0, textStyle: {color: '#94a3b8', fontSize: 10}, icon: 'circle', data: activeGatewayIds, selectedMode: true },
             radar: {
-                indicator: [{name:'A率',max:6.5},{name:'AB率',max:20},{name:'时长',max:35},{name:'超60s占比',max:16}],
+                indicator: [{name:'A率',max:6.5},{name:'AB率',max:25},{name:'时长',max:35},{name:'超60s占比',max:18}],
                 center: ['50%', '50%'], radius: '55%',
                 axisName: { color: '#38bdf8', fontWeight: 'bold' },
                 splitLine: { show: false }, splitArea: { show: false }, axisLine: { show: false } 
@@ -137,9 +136,9 @@
             title: { text: '网关四维平行特征', textStyle: {color: '#f8fafc', fontSize: 16} },
             parallelAxis: [
                 {dim: 0, name: 'A率', max: 6.5, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
-                {dim: 1, name: 'AB率', max: 20, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 1, name: 'AB率', max: 25, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
                 {dim: 2, name: '平均时长', max: 35, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
-                {dim: 3, name: '超60s占比', max: 16, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}}
+                {dim: 3, name: '超60s占比', max: 18, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}}
             ],
             parallel: { left: '12%', right: '15%', bottom: '15%', top: '22%', parallelAxisDefault: { axisLine: {lineStyle: {color: '#475569', width: 2}}, axisTick: { show: false }, splitLine: { show: false } } },
             series: activeGatewayIds.map((id, index) => ({
@@ -161,15 +160,15 @@
             }]
         }, true);
 
-        const metrics = [['t-a', 0, 'A率趋势', '%'], ['t-ab', 1, 'AB率趋势', '%'], ['t-dur', 2, '时长趋势', 's'], ['t-60s', 3, '占比趋势', '%']];
-        metrics.forEach(m => {
+        const metricParams = [['t-a', 0, 'A率趋势', '%'], ['t-ab', 1, 'AB率趋势', '%'], ['t-dur', 2, '时长趋势', 's'], ['t-60s', 3, '占比趋势', '%']];
+        metricParams.forEach(m => {
             charts[m[0]].setOption({
                 title: { text: m[2], textStyle: {color: '#f8fafc', fontSize: 14} },
                 legend: { top: 30, textStyle: {color: '#94a3b8', fontSize: 10} },
                 xAxis: { type: 'category', data: Object.keys(HISTORY_DATA), axisLabel: {color: '#94a3b8'} },
                 yAxis: { type: 'value', name: m[3], axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
                 grid: { top: '30%', bottom: '15%', left: '10%', right: '10%' },
-                series: targetList.map((id, index) => ({
+                series: activeGatewayIds.map((id, index) => ({
                     name: id, type: 'line', smooth: true, lineStyle: { width: id === '166-32' ? 5 : 2, color: colorPalette[index % colorPalette.length] },
                     data: Object.keys(HISTORY_DATA).map(d => HISTORY_DATA[d][id] ? HISTORY_DATA[d][id][m[1]] : null)
                 }))
@@ -181,8 +180,8 @@
             const [a, ab, dur, s60] = dayData[id];
             let advice = "";
             if (id === '166-32') advice = '<b style="color:#a78bfa">系统基准线</b>';
-            else if (a >= benchmark[0] * 0.9 && s60 <= benchmark[3] * 1.1) advice = '<b style="color:#38bdf8">效率标杆</b>';
-            else if (a < 3.5 || s60 > 13) advice = '<b style="color:#f87171">低于预期</b>';
+            else if (a >= benchmark[0] && s60 <= benchmark[3] * 1.1) advice = '<b style="color:#38bdf8">效率标杆</b>';
+            else if (a < 3.5 || s60 > 16) advice = '<b style="color:#f87171">低于预期</b>';
             else advice = '常规持平';
             return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
         }).join('');
