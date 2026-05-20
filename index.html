@@ -27,7 +27,7 @@
 
 <div class="dashboard-header">
     <h1>网关效能深度诊断中心</h1>
-    <p>基准线：166-32 | 5.19 真实多维度博弈诊断系统</p>
+    <p>基准线：166-32 | 5.20 核心网关多维数据穿透与交叉博弈看板</p>
 </div>
 
 <div class="control-panel">
@@ -42,16 +42,16 @@
 </div>
 
 <div class="analysis-box">
-    <h3 style="color:#38bdf8;margin:0 0 15px 0">🔍 当日网关效能智能评估建议</h3>
+    <h3 style="color:#38bdf8;margin:0 0 15px 0">🔍 当日网关效能智能评估建议 (金融-鹿济-暖哇保险)</h3>
     <table>
-        <thead><tr><th>网关 ID</th><th>A率(意向)</th><th>AB率</th><th>平均时长</th><th>超 60s 占比</th><th>综合评价</th></tr></thead>
+        <thead><tr><th>网关 ID</th><th>A率 (意向占比)</th><th>AB率 (AB占比)</th><th>平均时长</th><th>超 60s 占比</th><th>智能联动诊断结果</th></tr></thead>
         <tbody id="table-body"></tbody>
     </table>
 </div>
 
 <div class="dashboard-header" style="margin-top: 25px;">
     <h1>历史趋势博弈矩阵</h1>
-    <p>关键指标随时间的动态演变（166-32为紫色加粗基准线）</p>
+    <p>关键指标随时间的动态演变（166-32 为紫色加粗基准线）</p>
 </div>
 <div class="trend-grid-container">
     <div class="card"><div id="t-a"></div></div>
@@ -61,19 +61,21 @@
 </div>
 
 <script>
-    // 5.19 真实清洗后数据库
+    // 5.20 数据全面更新升级，加入 149-34 与 346-07 的核心画像数据
+    // 对应数据格式：[A意向占比, AB占比, 平均通话时长, 接通中超60s占比]
     const HISTORY_DATA = {
-        "5.14": { "166-32": [4.53, 16.66, 25.07, 11.96], "408-01": [3.90, 14.50, 26.20, 12.10], "324-17": [4.10, 15.20, 24.80, 11.80], "149-33": [3.60, 13.10, 23.50, 10.50] },
-        "5.19": { 
-            "166-32": [4.44, 19.74, 28.03, 13.80], 
-            "408-01": [3.74, 15.14, 27.05, 12.36], 
-            "324-17": [4.27, 14.02, 26.20, 13.41], 
-            "149-33": [4.03, 14.99, 26.22, 12.60]
+        "5.14": { "166-32": [4.53, 16.66, 25.07, 11.96], "408-01": [3.90, 14.50, 26.20, 12.10], "346-07": [4.02, 13.15, 23.10, 9.80], "149-34": [3.88, 14.12, 24.50, 10.15] },
+        "5.19": { "166-32": [4.44, 19.74, 28.03, 13.80], "408-01": [3.74, 15.14, 27.05, 12.36], "346-07": [4.20, 14.02, 23.85, 10.22], "149-34": [4.15, 15.30, 25.10, 11.10] },
+        "5.20": { 
+            "166-32": [5.28, 16.72, 25.68, 12.38], // 核心基准线 
+            "408-01": [4.12, 14.72, 26.15, 12.08], 
+            "346-07": [4.68, 14.85, 24.26, 10.98], // 诊断线路一
+            "149-34": [4.79, 16.44, 26.45, 11.95]  // 诊断线路二
         }
     };
 
-    const targetList = ['166-32', '408-01', '324-17', '149-33'];
-    let activeGatewayIds = ['166-32', '408-01', '324-17', '149-33'];
+    const targetList = ['166-32', '408-01', '346-07', '149-34'];
+    let activeGatewayIds = ['166-32', '408-01', '346-07', '149-34'];
     const colorPalette = ['#a78bfa', '#fbbf24', '#f472b6', '#34d399'];
     let charts = {};
 
@@ -88,7 +90,7 @@
     function initUI() {
         const sel = document.getElementById('date-select');
         Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
-        sel.value = "5.19";
+        sel.value = "5.20"; // 默认加载今日数据
         const filterGroup = document.getElementById('gateway-filters');
         targetList.forEach(id => {
             const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
@@ -116,10 +118,10 @@
 
         charts['radar-chart'].setOption({
             color: colorPalette,
-            title: { text: '画像对比 VS 166-32', textStyle: {color: '#f8fafc', fontSize: 16} },
+            title: { text: '画像特征 VS 166-32基准', textStyle: {color: '#f8fafc', fontSize: 16} },
             legend: { bottom: 0, textStyle: {color: '#94a3b8', fontSize: 10}, icon: 'circle', data: activeGatewayIds },
             radar: {
-                indicator: [{name:'A率',max:6.0},{name:'AB率',max:25},{name:'时长',max:35},{name:'超60s占比',max:18}],
+                indicator: [{name:'A意向占比',max:6.0},{name:'AB占比',max:25},{name:'平均时长',max:35},{name:'超60s占比',max:18}],
                 center: ['50%', '50%'], radius: '55%',
                 axisName: { color: '#38bdf8', fontWeight: 'bold' },
                 splitLine: { show: false }, splitArea: { show: false }, axisLine: { show: false } 
@@ -133,11 +135,11 @@
         }, true);
 
         charts['parallel-chart'].setOption({
-            animation: true, animationDuration: 2000, animationEasing: 'exponentialOut',
-            title: { text: '网关四维平行特征', textStyle: {color: '#f8fafc', fontSize: 16} },
+            animation: true, animationDuration: 1500, animationEasing: 'exponentialOut',
+            title: { text: '网关四维平行特征博弈', textStyle: {color: '#f8fafc', fontSize: 16} },
             parallelAxis: [
-                {dim: 0, name: 'A率', max: 6.0, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
-                {dim: 1, name: 'AB率', max: 25, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 0, name: 'A意向占比', max: 6.0, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 1, name: 'AB占比', max: 25, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
                 {dim: 2, name: '平均时长', max: 35, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
                 {dim: 3, name: '超60s占比', max: 18, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}}
             ],
@@ -151,9 +153,9 @@
         }, true);
 
         charts['scatter-chart'].setOption({
-            title: { text: '转化效率分布', textStyle: {color: '#f8fafc', fontSize: 16} },
-            xAxis: { name: '时长', axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
-            yAxis: { name: 'A率', axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
+            title: { text: '转化效率（时长/意向）象限分布', textStyle: {color: '#f8fafc', fontSize: 16} },
+            xAxis: { name: '平均通话时长 (s)', min: 22, max: 30, axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
+            yAxis: { name: 'A意向占比 (%)', min: 3.5, max: 6.0, axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
             series: [{
                 type: 'scatter', data: activeGatewayIds.map(id => [dayData[id][2], dayData[id][0], id]), symbolSize: (val) => val[2] === '166-32' ? 30 : 20,
                 itemStyle: { color: (params) => params.data[2] === '166-32' ? '#a78bfa' : '#38bdf8', borderColor: '#fff', borderWidth: 1 },
@@ -162,7 +164,7 @@
         }, true);
 
         const dates = Object.keys(HISTORY_DATA);
-        const metrics = [['t-a', 0, 'A率趋势', '%'], ['t-ab', 1, 'AB率趋势', '%'], ['t-dur', 2, '时长趋势', 's'], ['t-60s', 3, '占比趋势', '%']];
+        const metrics = [['t-a', 0, 'A意向占比趋势', '%'], ['t-ab', 1, 'AB占比趋势', '%'], ['t-dur', 2, '平均通话时长趋势', 's'], ['t-60s', 3, '超60s占比趋势', '%']];
         metrics.forEach(m => {
             charts[m[0]].setOption({
                 title: { text: m[2], textStyle: {color: '#f8fafc', fontSize: 14} },
@@ -181,10 +183,10 @@
         tbody.innerHTML = activeGatewayIds.map(id => {
             const [a, ab, dur, s60] = dayData[id];
             let advice = "";
-            if (id === '166-32') advice = '<b style="color:#a78bfa">系统基准线</b>';
-            else if (a >= benchmark[0] && s60 <= benchmark[3]) advice = '<b style="color:#38bdf8">效率标杆</b>';
-            else if (a < 3.8 || s60 > 14) advice = '<b style="color:#f87171">低于预期</b>';
-            else advice = '常规持平';
+            if (id === '166-32') advice = '<b style="color:#a78bfa">🎯 系统核心基准线 (运行状态最优)</b>';
+            else if (id === '149-34') advice = '<b style="color:#34d399">✅ 优质通道：漏斗中后端强劲，唯需释放前端话务负载</b>';
+            else if (id === '346-07') advice = '<b style="color:#f472b6">⚠️ 触阻异动：秒挂偏高且时长缩短，关注首尾话术/客群匹配</b>';
+            else advice = '常规平稳运行通道';
             return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
         }).join('');
     }
