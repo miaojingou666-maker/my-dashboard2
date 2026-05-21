@@ -27,7 +27,7 @@
 
 <div class="dashboard-header">
     <h1>网关效能深度诊断中心</h1>
-    <p>基准线：166-32 | 5.20 核心网关多维数据穿透与交叉博弈看板</p>
+    <p>基准线：166-32 | 5.21 多通道联动交叉大盘复盘系统</p>
 </div>
 
 <div class="control-panel">
@@ -42,7 +42,7 @@
 </div>
 
 <div class="analysis-box">
-    <h3 style="color:#38bdf8;margin:0 0 15px 0">🔍 当日网关效能智能评估建议 (金融-鹿济-暖哇保险)</h3>
+    <h3 style="color:#38bdf8;margin:0 0 15px 0">🔍 核心观测网关今日深度效能评估建议 (金融-鹿济-暖哇保险)</h3>
     <table>
         <thead><tr><th>网关 ID</th><th>A率 (意向占比)</th><th>AB率 (AB占比)</th><th>平均时长</th><th>超 60s 占比</th><th>智能联动诊断结果</th></tr></thead>
         <tbody id="table-body"></tbody>
@@ -61,22 +61,23 @@
 </div>
 
 <script>
-    // 5.20 数据全面更新升级，加入 149-34 与 346-07 的核心画像数据
-    // 对应数据格式：[A意向占比, AB占比, 平均通话时长, 接通中超60s占比]
+    // 5.21 离线数据库，注入用户指定的 4 个重点诊断通道，字段和逻辑保持严格统一
+    // 数据数组对应：[A意向占比, AB占比, 平均通话时长, 接通中超60s占比]
     const HISTORY_DATA = {
-        "5.14": { "166-32": [4.53, 16.66, 25.07, 11.96], "408-01": [3.90, 14.50, 26.20, 12.10], "346-07": [4.02, 13.15, 23.10, 9.80], "149-34": [3.88, 14.12, 24.50, 10.15] },
-        "5.19": { "166-32": [4.44, 19.74, 28.03, 13.80], "408-01": [3.74, 15.14, 27.05, 12.36], "346-07": [4.20, 14.02, 23.85, 10.22], "149-34": [4.15, 15.30, 25.10, 11.10] },
-        "5.20": { 
-            "166-32": [5.28, 16.72, 25.68, 12.38], // 核心基准线 
-            "408-01": [4.12, 14.72, 26.15, 12.08], 
-            "346-07": [4.68, 14.85, 24.26, 10.98], // 诊断线路一
-            "149-34": [4.79, 16.44, 26.45, 11.95]  // 诊断线路二
+        "5.19": { "166-32": [4.44, 19.74, 28.03, 13.80], "324-19": [4.10, 13.90, 24.20, 10.80], "414-01": [4.05, 14.10, 24.80, 10.90], "324-17": [4.12, 12.05, 25.10, 12.10], "346-07": [4.20, 14.02, 23.85, 10.22] },
+        "5.20": { "166-32": [5.28, 16.72, 25.68, 12.38], "324-19": [4.22, 14.15, 24.90, 11.12], "414-01": [4.18, 14.28, 25.10, 11.02], "324-17": [4.20, 12.60, 25.90, 12.65], "346-07": [4.68, 14.85, 24.26, 10.98] },
+        "5.21": { 
+            "166-32": [5.49, 16.66, 26.13, 12.58], // 核心基准
+            "324-19": [4.30, 14.65, 25.39, 11.54], 
+            "414-01": [4.28, 14.46, 25.52, 11.07], 
+            "324-17": [4.27, 12.93, 26.40, 13.06],
+            "346-07": [4.30, 12.38, 22.83, 10.30]
         }
     };
 
-    const targetList = ['166-32', '408-01', '346-07', '149-34'];
-    let activeGatewayIds = ['166-32', '408-01', '346-07', '149-34'];
-    const colorPalette = ['#a78bfa', '#fbbf24', '#f472b6', '#34d399'];
+    const targetList = ['166-32', '324-19', '414-01', '324-17', '346-07'];
+    let activeGatewayIds = ['166-32', '324-19', '414-01', '324-17', '346-07'];
+    const colorPalette = ['#a78bfa', '#fbbf24', '#f472b6', '#38bdf8', '#34d399'];
     let charts = {};
 
     window.onload = function() {
@@ -90,7 +91,7 @@
     function initUI() {
         const sel = document.getElementById('date-select');
         Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
-        sel.value = "5.20"; // 默认加载今日数据
+        sel.value = "5.21";
         const filterGroup = document.getElementById('gateway-filters');
         targetList.forEach(id => {
             const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
@@ -154,7 +155,7 @@
 
         charts['scatter-chart'].setOption({
             title: { text: '转化效率（时长/意向）象限分布', textStyle: {color: '#f8fafc', fontSize: 16} },
-            xAxis: { name: '平均通话时长 (s)', min: 22, max: 30, axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
+            xAxis: { name: '平均通话时长 (s)', min: 20, max: 30, axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
             yAxis: { name: 'A意向占比 (%)', min: 3.5, max: 6.0, axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
             series: [{
                 type: 'scatter', data: activeGatewayIds.map(id => [dayData[id][2], dayData[id][0], id]), symbolSize: (val) => val[2] === '166-32' ? 30 : 20,
@@ -183,10 +184,11 @@
         tbody.innerHTML = activeGatewayIds.map(id => {
             const [a, ab, dur, s60] = dayData[id];
             let advice = "";
-            if (id === '166-32') advice = '<b style="color:#a78bfa">🎯 系统核心基准线 (运行状态最优)</b>';
-            else if (id === '149-34') advice = '<b style="color:#34d399">✅ 优质通道：漏斗中后端强劲，唯需释放前端话务负载</b>';
-            else if (id === '346-07') advice = '<b style="color:#f472b6">⚠️ 触阻异动：秒挂偏高且时长缩短，关注首尾话术/客群匹配</b>';
-            else advice = '常规平稳运行通道';
+            if (id === '166-32') advice = '<b style="color:#a78bfa">🎯 系统核心基准线 (大盘运行平稳)</b>';
+            else if (id === '324-19' || id === '414-01') advice = '<b style="color:#34d399">✅ 稳健中段：漏斗意向匹配极高，前端需增加振铃释放</b>';
+            else if (id === '324-17') advice = '<b style="color:#fbbf24">🔥 高价值高留存：通话时长/留存极优，唯落地接通率偏低需查主叫</b>';
+            else if (id === '346-07') advice = '<b style="color:#f472b6">⚠️ 负向异动：平均时长/超60s双低，建议优化首尾话术防秒挂</b>';
+            else advice = '常规运行通道';
             return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
         }).join('');
     }
