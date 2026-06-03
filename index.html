@@ -27,7 +27,7 @@
 
 <div class="dashboard-header">
     <h1>网关效能深度诊断中心</h1>
-    <p>基准线：166-32 | 6.2 多通道数据交织与长尾特征博弈大盘</p>
+    <p>基准线：166-32 | 6.3 全量网关特征进化与多维博弈矩阵</p>
 </div>
 
 <div class="control-panel">
@@ -61,24 +61,25 @@
 </div>
 
 <script>
-    // 离线数据库：历史日期替换更新，今日节点严格锁定为 6.2
+    // 6.3 核心离线清洗数据库。保持全量字段结构完全相同
     // 数据数组对应：[A意向占比, AB占比, 平均通话时长, 接通中超60s占比]
     const HISTORY_DATA = {
-        "5.25": { "166-32": [4.26, 13.40, 22.73, 10.28], "418-01": [4.10, 11.50, 24.50, 11.10], "235-45": [4.32, 12.80, 25.10, 11.40], "397-08": [4.65, 13.90, 26.20, 12.50], "408-06": [4.20, 13.02, 25.80, 12.02], "376-06": [4.05, 12.90, 26.00, 12.30] },
-        "5.26": { "166-32": [4.52, 14.12, 24.35, 11.05], "418-01": [4.25, 12.02, 25.30, 11.45], "235-45": [4.50, 13.95, 26.40, 12.15], "397-08": [4.88, 14.90, 27.80, 13.20], "408-06": [4.42, 14.10, 27.20, 13.10], "376-06": [4.20, 13.80, 27.55, 13.40] },
-        "6.2": { 
-            "166-32": [5.33, 18.97, 29.94, 14.94], // 今日核心大盘基准
-            "418-01": [4.68, 16.76, 27.85, 13.22], 
-            "235-45": [4.86, 16.89, 28.43, 13.53], 
-            "397-08": [5.27, 18.64, 30.29, 14.92],
-            "408-06": [4.96, 17.55, 30.01, 14.92],
-            "376-06": [4.41, 15.98, 29.89, 15.15]
+        "5.26": { "166-32": [4.52, 14.12, 24.35, 11.05], "418-01": [4.25, 12.02, 25.30, 11.45], "235-45": [4.50, 13.95, 26.40, 12.15], "408-06": [4.42, 14.10, 27.20, 13.10], "156-62": [4.12, 12.50, 24.80, 11.02], "414-02": [4.05, 12.80, 25.10, 11.35], "351-06": [3.65, 11.90, 25.40, 12.10] },
+        "6.2": { "166-32": [5.33, 18.97, 29.94, 14.94], "418-01": [4.68, 16.76, 27.85, 13.22], "235-45": [4.86, 16.89, 28.43, 13.53], "408-06": [4.96, 17.55, 30.01, 14.92], "156-62": [5.01, 17.10, 28.50, 13.60], "414-02": [4.52, 15.60, 27.90, 13.12], "351-06": [3.80, 14.12, 28.15, 13.90] },
+        "6.3": { 
+            "166-32": [5.43, 19.17, 29.90, 14.90], // 今日全局核心基准线
+            "418-01": [4.17, 14.90, 26.85, 12.50], 
+            "235-45": [3.70, 13.52, 24.89, 10.62], 
+            "408-06": [4.53, 16.77, 29.96, 14.60],
+            "156-62": [5.29, 18.84, 29.12, 14.09],
+            "414-02": [4.76, 16.57, 28.44, 13.48],
+            "351-06": [3.83, 15.93, 29.37, 14.37]
         }
     };
 
-    const targetList = ['166-32', '418-01', '235-45', '397-08', '408-06', '376-06'];
-    let activeGatewayIds = ['166-32', '418-01', '235-45', '397-08', '408-06', '376-06'];
-    const colorPalette = ['#a78bfa', '#34d399', '#fbbf24', '#38bdf8', '#f472b6', '#22d3ee']; 
+    const targetList = ['166-32', '418-01', '235-45', '408-06', '156-62', '414-02', '351-06'];
+    let activeGatewayIds = ['166-32', '418-01', '235-45', '408-06', '156-62', '414-02', '351-06'];
+    const colorPalette = ['#a78bfa', '#34d399', '#fbbf24', '#38bdf8', '#f472b6', '#22d3ee', '#f87171']; // 紫色基准，其余分色
     let charts = {};
 
     window.onload = function() {
@@ -92,7 +93,7 @@
     function initUI() {
         const sel = document.getElementById('date-select');
         Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
-        sel.value = "6.2"; // 默认选中 6.2
+        sel.value = "6.3"; // 默认加载 6.3 最新切片
         const filterGroup = document.getElementById('gateway-filters');
         targetList.forEach(id => {
             const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
@@ -110,7 +111,7 @@
         charts['radar-chart'].on('legendmouseover', function(params) { charts['parallel-chart'].dispatchAction({ type: 'highlight', seriesName: params.name }); });
         charts['radar-chart'].on('legendmouseout', function() { charts['parallel-chart'].dispatchAction({ type: 'downplay' }); });
         charts['parallel-chart'].on('mouseover', function(params) { charts['radar-chart'].dispatchAction({ type: 'highlight', seriesName: params.seriesName }); });
-        charts['parallel-chart'].on('mouseout', function() { charts['parallel-chart'].dispatchAction({ type: 'downplay' }); });
+        charts['parallel-chart'].on('mouseout', function() { charts['radar-chart'].dispatchAction({ type: 'downplay' }); });
     }
 
     function refreshAll() {
@@ -131,7 +132,7 @@
                 name: id, type: 'radar', data: [{name: id, value: dayData[id]}],
                 itemStyle: { color: colorPalette[index % colorPalette.length] },
                 lineStyle: { width: id === '166-32' ? 6 : 2, shadowBlur: id === '166-32' ? 15 : 0, shadowColor: colorPalette[index % colorPalette.length] },
-                areaStyle: {opacity: 0.03}
+                areaStyle: {opacity: 0.02}
             }))
         }, true);
 
@@ -155,8 +156,8 @@
 
         charts['scatter-chart'].setOption({
             title: { text: '转化效率（时长/意向）象限分布', textStyle: {color: '#f8fafc', fontSize: 16} },
-            xAxis: { name: '平均通话时长 (s)', min: 26, max: 34, axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
-            yAxis: { name: 'A意向占比 (%)', min: 4.0, max: 6.0, axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
+            xAxis: { name: '平均通话时长 (s)', min: 22, max: 34, axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
+            yAxis: { name: 'A意向占比 (%)', min: 3.5, max: 6.0, axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
             series: [{
                 type: 'scatter', data: activeGatewayIds.map((id, idx) => [dayData[id][2], dayData[id][0], id, idx]), symbolSize: (val) => val[2] === '166-32' ? 30 : 20,
                 itemStyle: { color: (params) => colorPalette[params.data[3] % colorPalette.length], borderColor: '#fff', borderWidth: 1 },
@@ -184,11 +185,12 @@
         tbody.innerHTML = activeGatewayIds.map(id => {
             const [a, ab, dur, s60] = dayData[id];
             let advice = "";
-            if (id === '166-32') advice = '<b style="color:#a78bfa">🎯 系统核心基准线 (大盘时长与转化全面飙升)</b>';
-            else if (id === '418-01') advice = '<b style="color:#34d399">🚀 产能双骄：振铃极优且跑量巨大，漏斗模型紧贴基准，建议维持高负载</b>';
-            else if (id === '397-08' || id === '408-06') advice = '<b style="color:#38bdf8">💎 深度转化标杆：均时破30s且意向率极高，建议做高精准名单渗透</b>';
-            else if (id === '235-45' || id === '376-06') advice = '<b style="color:#fbbf24">⚖️ 腰部中游：模型运行极平稳，无秒挂威胁，常规按需分流即可</b>';
-            else advice = '常规运行通道';
+            if (id === '166-32') advice = '<b style="color:#a78bfa">🎯 系统核心基准线 (高意向长尾运行状态极优)</b>';
+            else if (id === '156-62' || id === '414-02') advice = '<b style="color:#34d399">🚀 提效双星：漏斗中后端强劲/振铃抗封极佳，强烈建议大幅放量</b>';
+            else if (id === '418-01' || id === '408-06') advice = '<b style="color:#38bdf8">⚖️ 稳健中坚：流量支撑能力及均时留存极平稳，建议常规持平跑量</b>';
+            else if (id === '235-45') advice = '<b style="color:#fbbf24">⚠️ 留存预警：平均时长偏低导致意向探底，需优化首尾话术防秒挂</b>';
+            else if (id === '351-06') advice = '<b style="color:#f87171">🚨 前端重阻：振铃遭遇断崖拦截(6.5%)，必须立即停号洗白或换主叫</b>';
+            else advice = '常规平稳运行通道';
             return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
         }).join('');
     }
