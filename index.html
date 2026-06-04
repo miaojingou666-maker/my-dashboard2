@@ -61,23 +61,23 @@
 </div>
 
 <script>
-    // 6.4 核心离线清洗数据库。保持全量字段结构、维度完全相同
+    // 6.4 核心离线清洗数据库，已根据真实截图完成对齐校准
     // 数据数组对应：[A意向占比, AB占比, 平均通话时长, 接通中超60s占比]
     const HISTORY_DATA = {
-        "5.26": { "166-32": [4.52, 14.12, 24.35, 11.05], "397-09": [3.55, 11.80, 24.20, 11.10], "351-06": [3.65, 11.90, 25.40, 12.10], "408-02": [4.20, 13.10, 26.50, 11.90], "156-62": [4.12, 12.50, 24.80, 11.02] },
-        "6.3": { "166-32": [5.43, 19.17, 29.90, 14.90], "397-09": [3.58, 12.12, 25.10, 11.85], "351-06": [3.83, 15.93, 29.37, 14.37], "408-02": [4.52, 15.80, 28.40, 13.80], "156-62": [5.29, 18.84, 29.12, 14.09] },
+        "5.26": { "166-32": [4.52, 14.12, 24.35, 11.05], "397-09": [3.55, 11.80, 24.20, 11.10], "351-06": [3.65, 11.90, 25.40, 12.10], "408-02": [3.20, 13.10, 26.50, 11.90], "156-62": [3.12, 12.50, 24.80, 11.02] },
+        "6.3": { "166-32": [5.43, 19.17, 29.90, 14.90], "397-09": [3.70, 13.12, 26.10, 11.55], "351-06": [3.70, 14.10, 28.10, 12.80], "408-02": [3.30, 13.80, 27.10, 12.10], "156-62": [4.15, 16.20, 27.20, 12.40] },
         "6.4": { 
-            "166-32": [5.43, 19.17, 29.90, 14.90], // 今日全局核心基准线
-            "397-09": [3.61, 12.51, 25.44, 12.02], 
-            "351-06": [3.83, 15.93, 29.37, 14.37], 
-            "408-02": [4.69, 16.63, 29.54, 14.54],
-            "156-62": [5.29, 18.84, 29.12, 14.09]
+            "166-32": [5.77, 19.91, 30.48, 15.34], // 今日校准全局核心基准线
+            "397-09": [3.83, 14.61, 27.34, 10.84], 
+            "351-06": [3.74, 14.21, 28.52, 13.42], 
+            "408-02": [3.37, 14.13, 27.73, 12.69],
+            "156-62": [3.34, 14.10, 25.47, 11.35]
         }
     };
 
     const targetList = ['166-32', '397-09', '351-06', '408-02', '156-62'];
     let activeGatewayIds = ['166-32', '397-09', '351-06', '408-02', '156-62'];
-    const colorPalette = ['#a78bfa', '#fbbf24', '#f87171', '#38bdf8', '#34d399']; // 紫色基准，其余动态分色
+    const colorPalette = ['#a78bfa', '#22d3ee', '#f87171', '#38bdf8', '#fbbf24']; // 紫色基准，其余动态分色
     let charts = {};
 
     window.onload = function() {
@@ -91,7 +91,7 @@
     function initUI() {
         const sel = document.getElementById('date-select');
         Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
-        sel.value = "6.4"; // 默认加载 6.4 最新切片
+        sel.value = "6.4"; 
         const filterGroup = document.getElementById('gateway-filters');
         targetList.forEach(id => {
             const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
@@ -155,7 +155,7 @@
         charts['scatter-chart'].setOption({
             title: { text: '转化效率（时长/意向）象限分布', textStyle: {color: '#f8fafc', fontSize: 16} },
             xAxis: { name: '平均通话时长 (s)', min: 22, max: 34, axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
-            yAxis: { name: 'A意向占比 (%)', min: 3.5, max: 6.0, axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
+            yAxis: { name: 'A意向占比 (%)', min: 3.0, max: 6.0, axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
             series: [{
                 type: 'scatter', data: activeGatewayIds.map((id, idx) => [dayData[id][2], dayData[id][0], id, idx]), symbolSize: (val) => val[2] === '166-32' ? 30 : 20,
                 itemStyle: { color: (params) => colorPalette[params.data[3] % colorPalette.length], borderColor: '#fff', borderWidth: 1 },
@@ -183,11 +183,207 @@
         tbody.innerHTML = activeGatewayIds.map(id => {
             const [a, ab, dur, s60] = dayData[id];
             let advice = "";
-            if (id === '166-32') advice = '<b style="color:#a78bfa">🎯 系统核心基准线 (高意向长尾运行状态极优)</b>';
-            else if (id === '156-62') advice = '<b style="color:#34d399">🚀 核心提效马车：中后端漏斗效率全盘居前，强烈建议持续开闸放量</b>';
-            else if (id === '408-02') advice = '<b style="color:#38bdf8">⚖️ 稳健释放通道：均时逼近30s，模型留存扎实，建议常规持平跑量</b>';
-            else if (id === '397-09') advice = '<b style="color:#fbbf24">⚖️ 腰部平稳通道：核心转化指标持平历史水准，无异动风险，常规分流即可</b>';
-            else if (id === '351-06') advice = '<b style="color:#f87171">🚨 前端严重受阻：振铃持续面临断崖压制(6.5%)，须立刻进行主叫洗白或号码置换</b>';
+            if (id === '166-32') advice = '<b style="color:#a78bfa">🎯 系统核心基准线 (大盘运行状态极优)</b>';
+            else if (id === '397-09') advice = '<b style="color:#22d3ee">⚡ 前端冲锋线：振铃与接通极大跑量，转化常规平稳，维持高并发</b>';
+            else if (id === '408-02') advice = '<b style="color:#38bdf8">⚖️ 稳健释放通道：均时留存模型扎实，常规持平跑量即可</b>';
+            else if (id === '156-62') advice = '<b style="color:#fbbf24">⚖️ 常规蓄力通道：指标出现阶段性调整回调，建议常规分流观测</b>';
+            else if (id === '351-06') advice = '<b style="color:#f87171">🚨 前端严重受阻：振铃持续面临拦截(6.01%)，必须立即停号洗白或置换主叫</b>';
+            else advice = '常规平稳运行通道';
+            return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
+        }).join('');
+    }
+</script>
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>网关效能深度诊断中心</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        body { background-color: #0b0f1a; color: #e2e8f0; font-family: 'PingFang SC', sans-serif; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .dashboard-header { width: 100%; max-width: 1400px; border-left: 6px solid #38bdf8; padding-left: 20px; margin-bottom: 25px; text-align: left; }
+        .dashboard-header h1 { font-size: 28px; color: #f8fafc; margin: 0; font-weight: bold; }
+        .dashboard-header p { color: #8b949e; margin: 5px 0 0 0; }
+        .control-panel { width: 100%; max-width: 1360px; background: #161e2d; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #1e293b; display: flex; align-items: center; gap: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .checkbox-group label { background: #21262d; color: #c9d1d9; border: 1px solid #30363d; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 5px; transition: all 0.3s; }
+        .checkbox-group label:hover { border-color: #38bdf8; color: #38bdf8; }
+        .container { width: 100%; max-width: 1400px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .card { background: #161e2d; border: 1px solid #1e293b; border-radius: 16px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); min-height: 420px; box-sizing: border-box; }
+        #radar-chart, #parallel-chart, #scatter-chart { width: 100%; height: 380px; }
+        .analysis-box { width: 100%; max-width: 1360px; background: #161e2d; border-radius: 12px; padding: 20px; border: 1px solid #1e293b; margin-bottom: 25px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { padding: 10px; color: #94a3b8; border-bottom: 1px solid #334155; }
+        td { padding: 12px 10px; border-bottom: 1px solid #334155; }
+        .trend-grid-container { width: 100%; max-width: 1400px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 25px; }
+        #t-a, #t-ab, #t-dur, #t-60s { width: 100%; height: 300px; }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-header">
+    <h1>网关效能深度诊断中心</h1>
+    <p>基准线：166-32 | 6.4 全量网关特征进化与多维博弈矩阵</p>
+</div>
+
+<div class="control-panel">
+    <div><label style="color:#8b949e">📅 日期选择：</label><select id="date-select" onchange="refreshAll()" style="background:#21262d;color:#fff;border:1px solid #30363d;padding:5px;border-radius:4px;"></select></div>
+    <div class="checkbox-group" id="gateway-filters"><label style="color:#8b949e">🔍 线路激活：</label></div>
+</div>
+
+<div class="container">
+    <div class="card"><div id="radar-chart"></div></div>
+    <div class="card"><div id="parallel-chart"></div></div>
+    <div class="card"><div id="scatter-chart"></div></div>
+</div>
+
+<div class="analysis-box">
+    <h3 style="color:#38bdf8;margin:0 0 15px 0">🔍 核心观测网关今日深度效能评估建议 (金融-鹿济-暖哇保险)</h3>
+    <table>
+        <thead><tr><th>网关 ID</th><th>A率 (意向占比)</th><th>AB率 (AB占比)</th><th>平均时长</th><th>超 60s 占比</th><th>智能联动诊断结果</th></tr></thead>
+        <tbody id="table-body"></tbody>
+    </table>
+</div>
+
+<div class="dashboard-header" style="margin-top: 25px;">
+    <h1>历史趋势博弈矩阵</h1>
+    <p>关键指标随时间的动态演变（166-32 为紫色加粗基准线）</p>
+</div>
+<div class="trend-grid-container">
+    <div class="card"><div id="t-a"></div></div>
+    <div class="card"><div id="t-ab"></div></div>
+    <div class="card"><div id="t-dur"></div></div>
+    <div class="card"><div id="t-60s"></div></div>
+</div>
+
+<script>
+    // 6.4 核心离线清洗数据库，已根据真实截图完成对齐校准
+    // 数据数组对应：[A意向占比, AB占比, 平均通话时长, 接通中超60s占比]
+    const HISTORY_DATA = {
+        "5.26": { "166-32": [4.52, 14.12, 24.35, 11.05], "397-09": [3.55, 11.80, 24.20, 11.10], "351-06": [3.65, 11.90, 25.40, 12.10], "408-02": [3.20, 13.10, 26.50, 11.90], "156-62": [3.12, 12.50, 24.80, 11.02] },
+        "6.3": { "166-32": [5.43, 19.17, 29.90, 14.90], "397-09": [3.70, 13.12, 26.10, 11.55], "351-06": [3.70, 14.10, 28.10, 12.80], "408-02": [3.30, 13.80, 27.10, 12.10], "156-62": [4.15, 16.20, 27.20, 12.40] },
+        "6.4": { 
+            "166-32": [5.77, 19.91, 30.48, 15.34], // 今日校准全局核心基准线
+            "397-09": [3.83, 14.61, 27.34, 10.84], 
+            "351-06": [3.74, 14.21, 28.52, 13.42], 
+            "408-02": [3.37, 14.13, 27.73, 12.69],
+            "156-62": [3.34, 14.10, 25.47, 11.35]
+        }
+    };
+
+    const targetList = ['166-32', '397-09', '351-06', '408-02', '156-62'];
+    let activeGatewayIds = ['166-32', '397-09', '351-06', '408-02', '156-62'];
+    const colorPalette = ['#a78bfa', '#22d3ee', '#f87171', '#38bdf8', '#fbbf24']; // 紫色基准，其余动态分色
+    let charts = {};
+
+    window.onload = function() {
+        initUI();
+        const ids = ['radar-chart','parallel-chart','scatter-chart','t-a','t-ab','t-dur','t-60s'];
+        ids.forEach(id => charts[id] = echarts.init(document.getElementById(id)));
+        bindInteraction();
+        refreshAll();
+    };
+
+    function initUI() {
+        const sel = document.getElementById('date-select');
+        Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
+        sel.value = "6.4"; 
+        const filterGroup = document.getElementById('gateway-filters');
+        targetList.forEach(id => {
+            const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
+            const labelStyle = id === '166-32' ? 'style="border-color:#a78bfa; color:#a78bfa; font-weight:bold"' : '';
+            filterGroup.innerHTML += `<label ${labelStyle}><input type="checkbox" value="${id}" ${isChecked} onchange="updateGatewayFilter(this)"> ${id}${id==='166-32'?'(基准)':''}</label>`;
+        });
+    }
+
+    function updateGatewayFilter(checkbox) {
+        activeGatewayIds = Array.from(document.querySelectorAll('#gateway-filters input:checked')).map(i => i.value);
+        refreshAll();
+    }
+
+    function bindInteraction() {
+        charts['radar-chart'].on('legendmouseover', function(params) { charts['parallel-chart'].dispatchAction({ type: 'highlight', seriesName: params.name }); });
+        charts['radar-chart'].on('legendmouseout', function() { charts['parallel-chart'].dispatchAction({ type: 'downplay' }); });
+        charts['parallel-chart'].on('mouseover', function(params) { charts['radar-chart'].dispatchAction({ type: 'highlight', seriesName: params.seriesName }); });
+        charts['parallel-chart'].on('mouseout', function() { charts['parallel-chart'].dispatchAction({ type: 'downplay' }); });
+    }
+
+    function refreshAll() {
+        const date = document.getElementById('date-select').value;
+        const dayData = HISTORY_DATA[date];
+
+        charts['radar-chart'].setOption({
+            color: colorPalette,
+            title: { text: '画像特征 VS 166-32基准', textStyle: {color: '#f8fafc', fontSize: 16} },
+            legend: { bottom: 0, textStyle: {color: '#94a3b8', fontSize: 9}, icon: 'circle', data: activeGatewayIds },
+            radar: {
+                indicator: [{name:'A意向占比',max:6.0},{name:'AB占比',max:25},{name:'平均时长',max:35},{name:'超60s占比',max:18}],
+                center: ['50%', '50%'], radius: '55%',
+                axisName: { color: '#38bdf8', fontWeight: 'bold' },
+                splitLine: { show: false }, splitArea: { show: false }, axisLine: { show: false } 
+            },
+            series: activeGatewayIds.map((id, index) => ({
+                name: id, type: 'radar', data: [{name: id, value: dayData[id]}],
+                itemStyle: { color: colorPalette[index % colorPalette.length] },
+                lineStyle: { width: id === '166-32' ? 6 : 2, shadowBlur: id === '166-32' ? 15 : 0, shadowColor: colorPalette[index % colorPalette.length] },
+                areaStyle: {opacity: 0.02}
+            }))
+        }, true);
+
+        charts['parallel-chart'].setOption({
+            animation: true, animationDuration: 1500, animationEasing: 'exponentialOut',
+            title: { text: '网关四维平行特征博弈', textStyle: {color: '#f8fafc', fontSize: 16} },
+            parallelAxis: [
+                {dim: 0, name: 'A意向占比', max: 6.0, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 1, name: 'AB占比', max: 25, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 2, name: '平均时长', max: 35, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 3, name: '超60s占比', max: 18, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}}
+            ],
+            parallel: { left: '12%', right: '15%', bottom: '15%', top: '22%', parallelAxisDefault: { axisLine: {lineStyle: {color: '#475569', width: 2}}, axisTick: { show: false }, splitLine: { show: false } } },
+            series: activeGatewayIds.map((id, index) => ({
+                name: id, type: 'parallel', 
+                lineStyle: { width: id === '166-32' ? 8 : 4, opacity: 0.6, color: colorPalette[index % colorPalette.length], shadowBlur: id === '166-32' ? 20 : 0, shadowColor: colorPalette[index % colorPalette.length] },
+                emphasis: { lineStyle: { width: 10, opacity: 1, shadowBlur: 20 }, label: { show: true, formatter: '{a}', color: 'inherit', fontWeight: 'bold', position: 'end' } },
+                data: [dayData[id]]
+            }))
+        }, true);
+
+        charts['scatter-chart'].setOption({
+            title: { text: '转化效率（时长/意向）象限分布', textStyle: {color: '#f8fafc', fontSize: 16} },
+            xAxis: { name: '平均通话时长 (s)', min: 22, max: 34, axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
+            yAxis: { name: 'A意向占比 (%)', min: 3.0, max: 6.0, axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
+            series: [{
+                type: 'scatter', data: activeGatewayIds.map((id, idx) => [dayData[id][2], dayData[id][0], id, idx]), symbolSize: (val) => val[2] === '166-32' ? 30 : 20,
+                itemStyle: { color: (params) => colorPalette[params.data[3] % colorPalette.length], borderColor: '#fff', borderWidth: 1 },
+                label: { show: true, formatter: '{@[2]}', position: 'top', color: '#fff', fontSize: 10 }
+            }]
+        }, true);
+
+        const dates = Object.keys(HISTORY_DATA);
+        const metrics = [['t-a', 0, 'A意向占比趋势', '%'], ['t-ab', 1, 'AB占比趋势', '%'], ['t-dur', 2, '平均通话时长趋势', 's'], ['t-60s', 3, '超60s占比趋势', '%']];
+        metrics.forEach(m => {
+            charts[m[0]].setOption({
+                title: { text: m[2], textStyle: {color: '#f8fafc', fontSize: 14} },
+                legend: { top: 30, textStyle: {color: '#94a3b8', fontSize: 10} },
+                xAxis: { type: 'category', data: dates, axisLabel: {color: '#94a3b8'} },
+                yAxis: { type: 'value', name: m[3], axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
+                grid: { top: '30%', bottom: '15%', left: '10%', right: '10%' },
+                series: activeGatewayIds.map((id, index) => ({
+                    name: id, type: 'line', smooth: true, lineStyle: { width: id === '166-32' ? 5 : 2, color: colorPalette[index % colorPalette.length] },
+                    data: dates.map(d => HISTORY_DATA[d][id] ? HISTORY_DATA[d][id][m[1]] : null)
+                }))
+            }, true);
+        });
+
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = activeGatewayIds.map(id => {
+            const [a, ab, dur, s60] = dayData[id];
+            let advice = "";
+            if (id === '166-32') advice = '<b style="color:#a78bfa">🎯 系统核心基准线 (大盘运行状态极优)</b>';
+            else if (id === '397-09') advice = '<b style="color:#22d3ee">⚡ 前端冲锋线：振铃与接通极大跑量，转化常规平稳，维持高并发</b>';
+            else if (id === '408-02') advice = '<b style="color:#38bdf8">⚖️ 稳健释放通道：均时留存模型扎实，常规持平跑量即可</b>';
+            else if (id === '156-62') advice = '<b style="color:#fbbf24">⚖️ 常规蓄力通道：指标出现阶段性调整回调，建议常规分流观测</b>';
+            else if (id === '351-06') advice = '<b style="color:#f87171">🚨 前端严重受阻：振铃持续面临拦截(6.01%)，必须立即停号洗白或置换主叫</b>';
             else advice = '常规平稳运行通道';
             return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
         }).join('');
