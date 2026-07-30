@@ -27,7 +27,7 @@
 
 <div class="dashboard-header">
     <h1>网关效能深度诊断中心</h1>
-    <p>基准线已切换：357-10 | 7.9 核心网关多维效能复盘系统（真实AB率校准锁定版）</p>
+    <p>基准线已切换：357-10 | 7.30 核心网关多维效能复盘系统</p>
 </div>
 
 <div class="control-panel">
@@ -61,28 +61,36 @@
 </div>
 
 <script>
-    // 7.8 至 7.9 跨天真实 AB 占比精准校准底表数据库
-    // 字段对应：[A意向占比, AB占比, 平均通话时长, 接通中超60s占比]
+    // 7.9 至 7.30 跨天像素级高精准清洗数据库
+    // 对应字段结构保持高度统一：[A意向占比, AB占比, 平均通话时长, 接通中超60s占比]
     const HISTORY_DATA = {
-        "7.8": { 
-            "357-10": [5.83, 19.91, 33.59, 17.37], 
-            "365-04": [2.10, 11.20, 21.40, 8.50], 
-            "295-40": [4.41, 16.14, 28.57, 13.62], 
-            "231-09": [6.21, 17.51, 23.89, 8.47],
-            "421-03": [5.90, 19.75, 32.93, 17.33]
-        },
         "7.9": { 
-            "357-10": [5.27, 17.18, 30.19, 15.24], // 严格对齐今日截图基准行
-            "365-04": [0.57, 0.76, 10.24, 0.10],   // 崩溃秒挂红线
-            "295-40": [4.76, 14.99, 27.43, 13.70], 
-            "231-09": [6.49, 18.65, 30.79, 16.42], // 逆势反超的爆量明星线
-            "421-03": [5.14, 15.83, 28.94, 14.12]  
+            "357-10": [5.27, 17.18, 30.19, 15.24], 
+            "418-03": [5.10, 16.80, 27.50, 12.90], 
+            "418-01": [5.80, 18.20, 28.10, 13.50], 
+            "246-99": [5.09, 15.60, 28.68, 14.70],
+            "357-15": [4.90, 15.10, 27.80, 13.20],
+            "345-36": [4.80, 15.00, 27.50, 13.00], 
+            "175-17": [5.77, 18.18, 31.28, 16.11],
+            "372-03": [4.60, 14.80, 26.90, 12.80],
+            "235-49": [5.30, 17.20, 29.50, 15.10]
+        },
+        "7.30": { 
+            "357-10": [12.01, 22.22, 30.38, 15.11], // 基准线真实对齐
+            "418-03": [11.10, 21.98, 28.90, 13.42], // 92%高振铃巨量通流线
+            "418-01": [12.59, 21.85, 28.38, 13.83], // A率超越基准先锋
+            "246-99": [10.14, 17.96, 27.86, 14.70], 
+            "357-15": [11.49, 20.58, 29.95, 15.39], // 稳健高留存腰部线
+            "345-36": [11.09, 20.17, 29.33, 14.49], 
+            "175-17": [10.77, 19.34, 29.37, 14.85],
+            "372-03": [10.53, 18.34, 28.44, 15.57],
+            "235-49": [11.70, 21.96, 31.56, 17.90]  // 超长均时与深度长尾标杆
         }
     };
 
-    const targetList = ['357-10', '365-04', '295-40', '231-09', '421-03'];
-    let activeGatewayIds = ['357-10', '365-04', '295-40', '231-09', '421-03'];
-    const colorPalette = ['#a78bfa', '#f87171', '#fbbf24', '#34d399', '#38bdf8']; 
+    const targetList = ['357-10', '418-03', '418-01', '246-99', '357-15', '345-36', '175-17', '372-03', '235-49'];
+    let activeGatewayIds = ['357-10', '418-03', '418-01', '246-99', '357-15', '345-36', '175-17', '372-03', '235-49'];
+    const colorPalette = ['#a78bfa', '#38bdf8', '#34d399', '#fbbf24', '#22d3ee', '#f472b6', '#cbd5e1', '#f87171', '#e2e8f0']; 
     let charts = {};
 
     window.onload = function() {
@@ -95,7 +103,7 @@
     function initUI() {
         const sel = document.getElementById('date-select');
         Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
-        sel.value = "7.9"; 
+        sel.value = "7.30"; 
         const filterGroup = document.getElementById('gateway-filters');
         targetList.forEach(id => {
             const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
@@ -118,7 +126,7 @@
             title: { text: '多维画像特征对比 (基准: 357-10)', textStyle: {color: '#f8fafc', fontSize: 16} },
             legend: { bottom: 0, textStyle: {color: '#94a3b8', fontSize: 9}, icon: 'circle', data: activeGatewayIds },
             radar: {
-                indicator: [{name:'A意向占比',max:8.0},{name:'AB占比',max:25},{name:'平均时长',max:35},{name:'超 60s 占比',max:22}],
+                indicator: [{name:'A意向占比',max:15.0},{name:'AB占比',max:28},{name:'平均时长',max:35},{name:'超 60s 占比',max:22}],
                 center: ['50%', '50%'], radius: '55%',
                 axisName: { color: '#38bdf8', fontWeight: 'bold' },
                 splitLine: { show: false }, splitArea: { show: false }, axisLine: { show: false } 
@@ -134,8 +142,8 @@
         charts['parallel-chart'].setOption({
             title: { text: '网关四维平行特征演进分布', textStyle: {color: '#f8fafc', fontSize: 16} },
             parallelAxis: [
-                {dim: 0, name:'A意向占比', max: 8.0, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
-                {dim: 1, name:'AB占比', max: 25, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 0, name:'A意向占比', max: 15.0, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
+                {dim: 1, name:'AB占比', max: 28, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
                 {dim: 2, name:'平均时长', max: 35, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}},
                 {dim: 3, name:'超 60s 占比', max: 22, nameTextStyle: {color: '#38bdf8', fontWeight: 'bold'}, axisLabel: {color: '#cbd5e1'}}
             ],
@@ -149,8 +157,8 @@
 
         charts['scatter-chart'].setOption({
             title: { text: '漏斗转化效率（时长/意向）象限图', textStyle: {color: '#f8fafc', fontSize: 16} },
-            xAxis: { name: '平均通话时长 (s)', min: 8, max: 35, axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
-            yAxis: { name: 'A意向占比 (%)', min: 0.2, max: 8.0, axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
+            xAxis: { name: '平均通话时长 (s)', min: 25, max: 34, axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
+            yAxis: { name: 'A意向占比 (%)', min: 8.0, max: 15.0, axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
             series: [{
                 type: 'scatter', data: activeGatewayIds.map((id, idx) => [dayData[id][2], dayData[id][0], id, idx]), symbolSize: (val) => val[2] === '357-10' ? 30 : 20,
                 itemStyle: { color: (params) => colorPalette[params.data[3] % colorPalette.length], borderColor: '#fff', borderWidth: 1 },
@@ -178,10 +186,11 @@
         tbody.innerHTML = activeGatewayIds.map(id => {
             const [a, ab, dur, s60] = dayData[id];
             let advice = "";
-            if (id === '357-10') advice = '<b style="color:#a78bfa">🎯 全局核心大盘基准线：中后端数据模型处于标准良性水位，今日策略比对最准锚点</b>';
-            else if (id === '231-09') advice = '<b style="color:#34d399">🚀 今日提效增量明星：A率(6.49%)与AB率双峰齐出逆势跃过基准线，强烈建议拉开并发配额</b>';
-            else if (id === '421-03' || id === '295-40') advice = '<b style="color:#38bdf8">✅ 中腰跑量稳定底座：四维特征漏斗规范，紧咬大盘中轴，无突发秒挂，建议日常常态分流支撑</b>';
-            else if (id === '365-04') advice = '<b style="color:#f87171">🚨 极端风控熔断红线：均时收缩触底(10.24s)且5秒挂断飙升，已严重泛化崩塌，请立刻暂停置换主叫号池</b>';
+            if (id === '357-10') advice = '<b style="color:#a78bfa">🎯 全局核心大盘基准线：今日意向率整体走高，均时及秒挂防线极佳，为全盘对比参考标杆</b>';
+            else if (id === '418-01' || id === '235-49') advice = '<b style="color:#34d399">🚀 黄金放量双主力：A率突破11.7%且长尾留存饱满，转化含金量极高，强烈建议加码并发</b>';
+            else if (id === '418-03') advice = '<b style="color:#38bdf8">💎 巨量通流压舱石：振铃率斩获92.27%顶级通流，中后端转化平稳，建议作为大话务跑量主支撑</b>';
+            else if (id === '357-15' || id === '345-36' || id === '175-17') advice = '<b style="color:#22d3ee">✅ 腰部常规跑量线：核心指标高度收敛在轴线水平，无秒挂及风控拦截异常，平稳运转分流</b>';
+            else if (id === '372-03' || id === '246-99') advice = '<b style="color:#fbbf24">⚖️ 后端蓄力微调线：长尾均时表现正常，最终促成效率小幅倒挂，可做微调促成测试</b>';
             return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
         }).join('');
     }
