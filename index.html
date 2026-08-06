@@ -27,7 +27,7 @@
 
 <div class="dashboard-header">
     <h1>网关效能深度诊断中心</h1>
-    <p>基准线已切换：357-10 | 8.4 核心网关多维效能复盘系统（真实AB率校准锁定版）</p>
+    <p>基准线已切换：357-10 | 8.6 核心网关多维效能复盘系统（真实AB率校准版）</p>
 </div>
 
 <div class="control-panel">
@@ -61,30 +61,32 @@
 </div>
 
 <script>
-    // 7.30 至 8.4 跨天 100% 真实AB占比精准清洗数据库
-    // 字段：[A意向占比, AB占比, 平均通话时长, 接通中超60s占比]
+    // 8.4 至 8.6 跨天像素级高精准清洗数据库
+    // 对应字段结构保持高度统一：[A意向占比, AB占比, 平均通话时长, 接通中超60s占比]
     const HISTORY_DATA = {
-        "7.30": { 
-            "357-10": [12.01, 22.22, 30.38, 15.11], 
-            "345-44": [9.33, 17.59, 29.80, 15.11], 
-            "172-14": [5.80, 16.90, 29.23, 14.76], 
-            "376-11": [4.56, 13.24, 26.61, 13.61],
-            "222-28": [6.01, 18.56, 29.71, 14.28],
-            "235-49": [11.70, 21.96, 31.56, 17.90]
-        },
         "8.4": { 
-            "357-10": [6.34, 17.59, 30.60, 15.49], // 100% 严格对应截图今日真实行数据
-            "345-44": [4.75, 12.88, 29.24, 17.97], // 语音助手占比高达38.98%的异常线
-            "172-14": [5.80, 16.90, 29.23, 14.76], // 96%顶级振铃跑量主力
-            "376-11": [4.56, 13.24, 26.61, 13.61], // 助手拦截及通流双阻线路
-            "222-28": [6.01, 18.56, 29.71, 14.28], // AB率反超基准的低秒挂优质通道
-            "235-49": [5.31, 14.24, 29.44, 15.14]  // 稳健收敛的常态化分流底座
+            "357-10": [6.34, 17.59, 30.60, 15.49], 
+            "235-49": [5.31, 14.24, 29.44, 15.14], 
+            "198-08": [5.10, 15.10, 26.80, 13.50], 
+            "246-99": [5.81, 17.37, 30.53, 16.01],
+            "246-107": [5.90, 15.80, 28.90, 14.80],
+            "295-55": [7.30, 20.21, 29.79, 14.94], 
+            "222-28": [6.01, 18.56, 29.71, 14.28]
+        },
+        "8.6": { 
+            "357-10": [4.23, 13.59, 26.86, 12.98], // 截图真实基准数据
+            "235-49": [4.57, 14.06, 28.40, 14.49], 
+            "198-08": [5.26, 15.53, 27.37, 14.17], // 65%高振铃优质主力
+            "246-99": [5.74, 18.08, 30.10, 16.19], // A率/AB率爆量双峰一
+            "246-107": [6.33, 16.10, 29.87, 15.83], // A率/AB率爆量双峰二
+            "295-55": [5.54, 16.21, 27.82, 13.35], // 63%振铃且高转主力
+            "222-28": [4.48, 14.05, 28.51, 13.77]  
         }
     };
 
-    const targetList = ['357-10', '345-44', '172-14', '376-11', '222-28', '235-49'];
-    let activeGatewayIds = ['357-10', '345-44', '172-14', '376-11', '222-28', '235-49'];
-    const colorPalette = ['#a78bfa', '#f87171', '#34d399', '#fbbf24', '#38bdf8', '#22d3ee']; 
+    const targetList = ['357-10', '235-49', '198-08', '246-99', '246-107', '295-55', '222-28'];
+    let activeGatewayIds = ['357-10', '235-49', '198-08', '246-99', '246-107', '295-55', '222-28'];
+    const colorPalette = ['#a78bfa', '#38bdf8', '#34d399', '#fbbf24', '#22d3ee', '#f472b6', '#cbd5e1']; 
     let charts = {};
 
     window.onload = function() {
@@ -97,7 +99,7 @@
     function initUI() {
         const sel = document.getElementById('date-select');
         Object.keys(HISTORY_DATA).forEach(d => sel.add(new Option(d, d)));
-        sel.value = "8.4"; 
+        sel.value = "8.6"; 
         const filterGroup = document.getElementById('gateway-filters');
         targetList.forEach(id => {
             const isChecked = activeGatewayIds.includes(id) ? 'checked' : '';
@@ -151,8 +153,8 @@
 
         charts['scatter-chart'].setOption({
             title: { text: '漏斗转化效率（时长/意向）象限图', textStyle: {color: '#f8fafc', fontSize: 16} },
-            xAxis: { name: '平均通话时长 (s)', min: 24, max: 33, axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
-            yAxis: { name: 'A意向占比 (%)', min: 3.5, max: 8.0, axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
+            xAxis: { name: '平均通话时长 (s)', min: 24, max: 32, axisLabel: {color: '#94a3b8'}, splitLine: {show: false} },
+            yAxis: { name: 'A意向占比 (%)', min: 3.0, max: 8.0, axisLabel: {color: '#94a3b8'}, splitLine: {lineStyle: {color: '#30363d'}} },
             series: [{
                 type: 'scatter', data: activeGatewayIds.map((id, idx) => [dayData[id][2], dayData[id][0], id, idx]), symbolSize: (val) => val[2] === '357-10' ? 30 : 20,
                 itemStyle: { color: (params) => colorPalette[params.data[3] % colorPalette.length], borderColor: '#fff', borderWidth: 1 },
@@ -180,11 +182,10 @@
         tbody.innerHTML = activeGatewayIds.map(id => {
             const [a, ab, dur, s60] = dayData[id];
             let advice = "";
-            if (id === '357-10') advice = '<b style="color:#a78bfa">🎯 全局核心大盘基准线：中后端数据模型处于标准良性水位，今日策略比对最准锚点</b>';
-            else if (id === '172-14') advice = '<b style="color:#34d399">🚀 96%顶级高振铃跑量主力：流量倾泻极佳且中后端承接饱满，强烈建议维持高满载负荷放量</b>';
-            else if (id === '222-28') advice = '<b style="color:#38bdf8">💎 低秒挂高意向优质线：AB占比(18.56%)超越基准且5秒挂断低至7.21%，首选加码并发</b>';
-            else if (id === '235-49') advice = '<b style="color:#22d3ee">✅ 中腰跑量稳定底座：四维特征漏斗规范，长尾留存达15.14%，建议常态化大流量分流支撑</b>';
-            else if (id === '376-11' || id === '345-44') advice = '<b style="color:#f87171">🚨 语音助手高挂预警：345-44助手率突增至38.98%，需检查人声识别检测并适当下调并发配额</b>';
+            if (id === '357-10') advice = '<b style="color:#a78bfa">🎯 全局核心大盘基准线：中后端深度转化留存规整，今日全局复盘标杆锚点</b>';
+            else if (id === '246-107' || id === '246-99') advice = '<b style="color:#34d399">🚀 黄金放量双主力：A率(5.7%~6.3%)逆势超越基准，均时过30s长尾极佳，建议大幅提升并发</b>';
+            else if (id === '295-55' || id === '198-08') advice = '<b style="color:#38bdf8">✅ 优质高通流放量线：振铃率超63%~65%通流强劲，A率超5.2%，建议高负荷维持放量</b>';
+            else if (id === '222-28' || id === '235-49') advice = '<b style="color:#22d3ee">✅ 腰部常规跑量线：指标分布完全落在大盘安全基底区间，运行稳健无异动风险，常规跑量</b>';
             return `<tr><td><b>${id}</b></td><td>${a}%</td><td>${ab}%</td><td>${dur}s</td><td>${s60}%</td><td>${advice}</td></tr>`;
         }).join('');
     }
